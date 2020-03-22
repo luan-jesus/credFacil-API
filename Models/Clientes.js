@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = (sequelize, DataTypes) => {
   const Clientes = sequelize.define("clientes", {
     id: { type: DataTypes.INTEGER, primaryKey: true },

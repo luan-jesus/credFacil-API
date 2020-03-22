@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = (sequelize, DataTypes) => {
   const Emprestimos = sequelize.define("emprestimos", {
     idCliente: {
@@ -12,9 +14,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     numParcelas: {
       type: DataTypes.INTEGER
-    },
-    dataCriacao: {
-      type: DataTypes.DATE
     }
   });
 
