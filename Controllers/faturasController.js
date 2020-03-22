@@ -5,6 +5,7 @@ var express = require("express");
 const db = require("../db");
 
 var router = express.Router();
+
 /*
  * GET
  */
@@ -35,10 +36,9 @@ router.get("/api/parcelas/:idCliente", async (req, res) => {
     "       'parcelas'.'pago'," +
     "       'parcelas'.'dataParcela'," +
     "       'emprestimos'.'idCliente'" +
-    "FROM 'parcelas'" +
-    "JOIN 'emprestimos' ON 'parcelas'.'idEmprestimo' = 'emprestimos'.'Id'" +
-    "WHERE 'emprestimos'.'idCliente' = " +
-    req.params.idCliente;
+    "  FROM 'parcelas'" +
+    "  JOIN 'emprestimos' ON 'parcelas'.'idEmprestimo' = 'emprestimos'.'Id'" +
+    " WHERE 'emprestimos'.'idCliente' = " + req.params.idCliente;
   await db.sequelize
     .query(SSQL, {
       type: db.sequelize.QueryTypes.SELECT
@@ -57,12 +57,10 @@ router.get("/api/parcelas/:idCliente/:idParcela", async (req, res) => {
     "       'parcelas'.'pago'," +
     "       'parcelas'.'dataParcela'," +
     "       'emprestimos'.'idCliente'" +
-    "FROM 'parcelas'" +
-    "JOIN 'emprestimos' ON 'parcelas'.'idEmprestimo' = 'emprestimos'.'Id'" +
-    "WHERE 'emprestimos'.'idCliente' = " +
-    req.params.idCliente +
-    "  and 'parcelas'.'parcelaNum' = " +
-    req.params.idParcela;
+    "  FROM 'parcelas'" +
+    "  JOIN 'emprestimos' ON 'parcelas'.'idEmprestimo' = 'emprestimos'.'Id'" +
+    " WHERE 'emprestimos'.'idCliente' = " + req.params.idCliente +
+    "   AND 'parcelas'.'parcelaNum' = " + req.params.idParcela;
   await db.sequelize
     .query(SSQL, {
       type: db.sequelize.QueryTypes.SELECT
