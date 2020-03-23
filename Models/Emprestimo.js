@@ -16,6 +16,4 @@ const Emprestimo = db.sequelize.define("emprestimos", {
   }
 });
 
-//Emprestimo.sync({force: true});
-
 module.exports = Emprestimo;

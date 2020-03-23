@@ -31,6 +31,4 @@ const Parcela = db.sequelize.define("parcelas", {
   }
 });
 
-//Parcela.sync({force: true});
-
 module.exports = Parcela;

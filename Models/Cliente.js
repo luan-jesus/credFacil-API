@@ -5,6 +5,4 @@ const Cliente = db.sequelize.define("clientes", {
   name: { type: db.Sequelize.TEXT }
 });
 
-//Cliente.sync({force: true});
-
 module.exports = Cliente;
