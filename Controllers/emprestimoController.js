@@ -11,7 +11,7 @@ var router = express.Router();
  */
 
 /** Todos os emprestimos **/
-router.get("/api/emprestimos", async (req, res) => {
+router.get("/emprestimos", async (req, res) => {
   await Emprestimo.findAll().then(ev => res.json(ev));
 });
 
@@ -20,7 +20,7 @@ router.get("/api/emprestimos", async (req, res) => {
  */
 
 /** Cadastrar novo emprestimo **/
-router.post("/api/emprestimos", async (req, res) => {
+router.post("/emprestimos", async (req, res) => {
   var body = req.body;
   const emprestimo = Emprestimo.create({
     name: body.name

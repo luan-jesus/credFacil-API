@@ -11,7 +11,7 @@ var router = express.Router();
  */
 
 /** Todas as parcelas **/
-router.get("/api/parcelas", async (req, res) => {
+router.get("/parcelas/", async (req, res) => {
   await Parcela.findAll({
     attributes: [
       "idEmprestimo",
@@ -25,8 +25,27 @@ router.get("/api/parcelas", async (req, res) => {
   }).then(ev => res.json(ev));
 });
 
+/** Todas as parcelas de hoje **/
+router.get("/parcelas/today", async (req, res) => {
+  var today = new Date();
+  await Parcela.findAll({
+    attributes: [
+      "idEmprestimo",
+      "parcelaNum",
+      "valorParcela",
+      "cobrado",
+      "valorPago",
+      "pago",
+      "dataParcela"
+    ],
+    where: {
+      dataParcela: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    }
+  }).then(ev => res.json(ev));
+});
+
 /** Todas as parcelas de determinado cliente **/
-router.get("/api/parcelas/:idCliente", async (req, res) => {
+router.get("/parcelas/:idCliente", async (req, res) => {
   var SSQL =
     "SELECT 'parcelas'.'idEmprestimo', " +
     "       'parcelas'.'parcelaNum'," +
@@ -47,7 +66,7 @@ router.get("/api/parcelas/:idCliente", async (req, res) => {
 });
 
 /** Determinada parcela de Determinado cliente **/
-router.get("/api/parcelas/:idCliente/:idParcela", async (req, res) => {
+router.get("/parcelas/:idCliente/:idParcela", async (req, res) => {
   var SSQL =
     "SELECT 'parcelas'.'idEmprestimo', " +
     "       'parcelas'.'parcelaNum'," +

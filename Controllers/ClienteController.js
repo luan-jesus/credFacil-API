@@ -11,7 +11,7 @@ var router = express.Router();
  */
 
 /** Todos os clientes **/
-router.get("/api/clientes", async (req, res) => {
+router.get("/clientes", async (req, res) => {
   await Cliente.findAll().then(ev => res.json(ev));
 });
 
@@ -20,7 +20,7 @@ router.get("/api/clientes", async (req, res) => {
  */
 
 /** Cadastrar novo cliente **/
-router.post("/api/clientes", async (req, res) => {
+router.post("/clientes", async (req, res) => {
   var body = req.body;
   const cliente = Cliente.create({
     name: body.name
