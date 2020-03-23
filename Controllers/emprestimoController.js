@@ -2,7 +2,7 @@
 var express = require("express");
 
 /** Internal Modules **/
-const db = require("../db");
+const Emprestimo = require("../Models/Emprestimo");
 
 var router = express.Router();
 
@@ -12,7 +12,7 @@ var router = express.Router();
 
 /** Todos os emprestimos **/
 router.get("/api/emprestimos", async (req, res) => {
-  await db.Emprestimo.findAll().then(ev => res.json(ev));
+  await Emprestimo.findAll().then(ev => res.json(ev));
 });
 
 /*
@@ -22,7 +22,7 @@ router.get("/api/emprestimos", async (req, res) => {
 /** Cadastrar novo emprestimo **/
 router.post("/api/emprestimos", async (req, res) => {
   var body = req.body;
-  const emprestimo = db.Emprestimo.create({
+  const emprestimo = Emprestimo.create({
     name: body.name
   });
   res.send("ok");

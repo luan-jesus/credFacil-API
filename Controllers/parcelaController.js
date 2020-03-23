@@ -2,7 +2,7 @@
 var express = require("express");
 
 /** Internal Modules **/
-const db = require("../db");
+const Parcela = require("../Models/Parcela");
 
 var router = express.Router();
 
@@ -12,7 +12,7 @@ var router = express.Router();
 
 /** Todas as parcelas **/
 router.get("/api/parcelas", async (req, res) => {
-  await db.Parcela.findAll({
+  await Parcela.findAll({
     attributes: [
       "idEmprestimo",
       "parcelaNum",

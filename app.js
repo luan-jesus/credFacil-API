@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require('cors');
 
 /** Internal modules **/
-const faturasController = require("./Controllers/faturasController");
+const parcelaController = require("./Controllers/parcelaController");
 const clienteController = require("./Controllers/clienteController");
 const emprestimoController = require("./Controllers/emprestimoController");
 
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 /** Express routing **/
-app.use("/", faturasController);
+app.use("/", parcelaController);
 app.use("/", clienteController);
 app.use("/", emprestimoController);
 

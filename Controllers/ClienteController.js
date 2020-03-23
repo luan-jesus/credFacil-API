@@ -2,7 +2,7 @@
 var express = require("express");
 
 /** Internal Modules **/
-const db = require("../db");
+const Cliente = require("../Models/Cliente");
 
 var router = express.Router();
 
@@ -12,7 +12,7 @@ var router = express.Router();
 
 /** Todos os clientes **/
 router.get("/api/clientes", async (req, res) => {
-  await db.Cliente.findAll().then(ev => res.json(ev));
+  await Cliente.findAll().then(ev => res.json(ev));
 });
 
 /*
@@ -22,7 +22,7 @@ router.get("/api/clientes", async (req, res) => {
 /** Cadastrar novo cliente **/
 router.post("/api/clientes", async (req, res) => {
   var body = req.body;
-  const cliente = db.Cliente.create({
+  const cliente = Cliente.create({
     name: body.name
   });
   res.send("ok");
