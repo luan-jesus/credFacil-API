@@ -3,7 +3,6 @@ var express = require("express");
 
 /** Internal Modules **/
 const Cliente = require("../Models/Cliente");
-const db = require("../Models/db");
 
 var router = express.Router();
 
@@ -26,7 +25,7 @@ router.get("/clientes", async (req, res) => {
 router.post("/clientes", async (req, res) => {
   var body = req.body;
   try {
-    await db.sequelize.transaction(async t => {
+    await sequelize.transaction(async t => {
       await Cliente.create(
         {
           name: body.name
