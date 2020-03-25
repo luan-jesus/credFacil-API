@@ -3,16 +3,19 @@ const db = require("./db");
 const Emprestimo = db.sequelize.define("emprestimos", {
   idCliente: {
     type: db.Sequelize.INTEGER,
+    allowNull: false,
     references: {
       model: "clientes",
       key: "id"
     }
   },
   valorEmprestimo: {
-    type: db.Sequelize.DECIMAL
+    type: db.Sequelize.DECIMAL,
+    allowNull: false
   },
   numParcelas: {
-    type: db.Sequelize.INTEGER
+    type: db.Sequelize.INTEGER,
+    allowNull: false
   }
 });
 

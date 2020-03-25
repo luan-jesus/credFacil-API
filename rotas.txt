@@ -1,0 +1,25 @@
+Rotas:
+
+GET   - http://localhost:5000/clientes    => retorna todos os clientes
+
+POST  - http://localhost:5000/clientes    => cadastra um novo cliente.
+estrutura do JSON:
+{
+  "name": "Novo Cliente"
+}
+
+
+GET   - http://localhost:5000/emprestimos => retorna todos os emprestimos
+
+POST  - http://localhost:5000/emprestimos => cadastra um novo emprestimo, e cria uma linha na tabela de Parcelas para cada parcela deste emrpestimo.
+estrutura do JSON:
+{
+	"idCliente": 1,
+	"valorEmprestimo": 1000,
+	"numParcelas": 10
+}
+
+GET   - http://localhost:5000/parcelas/[idEmprestimo]  => Retorna todas as parcelas de determinado emprestimo, passando o Id do emprestimo pela url. exemplo:
+                                                          http://localhost:5000/parcelas/1 -> retorna todas as parcelas do emprestimo '1'
+
+GET   - http://localhost:5000/parcelas/today  => Retorna todas as parcela com a data de hoje (data do computador)

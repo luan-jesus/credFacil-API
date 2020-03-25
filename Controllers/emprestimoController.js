@@ -3,8 +3,12 @@ var express = require("express");
 
 /** Internal Modules **/
 const Emprestimo = require("../Models/Emprestimo");
+const Parcela = require("../Models/Parcela");
+const db = require("../Models/db");
 
 var router = express.Router();
+
+const dia = 24 * 60 * 60 * 1000;
 
 /*
  * GET
@@ -22,10 +26,46 @@ router.get("/emprestimos", async (req, res) => {
 /** Cadastrar novo emprestimo **/
 router.post("/emprestimos", async (req, res) => {
   var body = req.body;
-  const emprestimo = Emprestimo.create({
-    name: body.name
-  });
-  res.send("ok");
-})
+  const transaction = await db.sequelize.transaction();
+  try {
+    var emprestimo;
+    await Emprestimo.create(
+      {
+        idCliente: body.idCliente,
+        valorEmprestimo: body.valorEmprestimo,
+        numParcelas: body.numParcelas
+      },
+      { transaction: transaction }
+    ).then(ev => {
+      emprestimo = ev;
+    });
+
+    var today = new Date();
+    for (var i = 1; i <= body.numParcelas; i++) {
+      do {
+        today = new Date(today.getTime() + dia);
+      } while (today.getDay() == 6);
+
+      await Parcela.create(
+        {
+          idEmprestimo: emprestimo.id,
+          parcelaNum: i,
+          valorParcela: emprestimo.valorEmprestimo / emprestimo.numParcelas,
+          cobrado: false,
+          valorPago: 0,
+          pago: false,
+          dataParcela: today
+        },
+        { transaction: transaction }
+      );
+    }
+
+    await transaction.commit();
+    res.status(201).send();
+  } catch (error) {
+    await transaction.rollback();
+    res.status(400).send(error);
+  }
+});
 
 module.exports = router;
