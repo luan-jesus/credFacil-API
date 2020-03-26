@@ -7,11 +7,13 @@
 const Cliente = require("./Models/Cliente");
 const Emprestimo = require("./Models/Emprestimo");
 const Parcela = require("./Models/Parcela");
+const User = require("./Models/User");
 
 const attDB = async () => {
   Cliente.sync({ force: true });
   Emprestimo.sync({ force: true });
   Parcela.sync({ force: true });
+  User.sync({ force: true });
 
   console.log("Aguardando 5 segundos para atualizar as tabelas");
   await wait(1000);
@@ -19,6 +21,18 @@ const attDB = async () => {
 };
 
 attDB().then(() => {
+  User.bulkCreate([
+    {
+      username: "admin",
+      password: "admin",
+      authLevel: 2
+    },
+    {
+      username: "user",
+      password: "user",
+      authLevel: 1
+    }
+  ]);
   Cliente.bulkCreate([
     {
       name: "Magalu"
