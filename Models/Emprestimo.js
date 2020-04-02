@@ -16,6 +16,10 @@ const Emprestimo = db.sequelize.define("emprestimos", {
   numParcelas: {
     type: db.Sequelize.INTEGER,
     allowNull: false
+  },
+  dataInicio: {
+    type: db.Sequelize.DATE,
+    allowNull: false
   }
 });
 

@@ -20,8 +20,8 @@ router.post("/auth/login", async (req, res) => {
   } else {
     await User.findAll({
       where: {
-        username: body.username,
-        password: body.password
+        username: body.username.toLowerCase(),
+        password: body.password.toLowerCase()
       }
     }).then(user => {
         if (user.length === 0) {
