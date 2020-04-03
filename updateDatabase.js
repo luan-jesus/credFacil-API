@@ -4,12 +4,14 @@
  * Isto também populará as tabelas do banco de dados com dados ficticios
  */
 
+const Status = require("./Models/Status");
 const Cliente = require("./Models/Cliente");
 const Emprestimo = require("./Models/Emprestimo");
 const Parcela = require("./Models/Parcela");
 const User = require("./Models/User");
 
 const attDB = async () => {
+  Status.sync({ force: true });
   Cliente.sync({ force: true });
   Emprestimo.sync({ force: true });
   Parcela.sync({ force: true });
@@ -21,6 +23,14 @@ const attDB = async () => {
 };
 
 attDB().then(() => {
+  Status.bulkCreate([
+    {
+      statusName: "Pendente"
+    },
+    {
+      statusName: "Concluido"
+    }
+  ]);
   User.bulkCreate([
     {
       username: "admin",
@@ -52,22 +62,30 @@ attDB().then(() => {
     {
       idCliente: 1,
       valorEmprestimo: 1100,
-      numParcelas: 11
+      numParcelas: 11,
+      dataInicio: new Date("01/11/2019"),
+      status: 1
     },
     {
       idCliente: 2,
       valorEmprestimo: 2400,
-      numParcelas: 24
+      numParcelas: 24,
+      dataInicio: new Date("01/11/2019"),
+      status: 1
     },
     {
       idCliente: 3,
       valorEmprestimo: 700,
-      numParcelas: 7
+      numParcelas: 7,
+      dataInicio: new Date("01/11/2019"),
+      status: 1
     },
     {
       idCliente: 4,
       valorEmprestimo: 1400,
-      numParcelas: 14
+      numParcelas: 14,
+      dataInicio: new Date("01/11/2019"),
+      status: 1
     }
   ]);
 

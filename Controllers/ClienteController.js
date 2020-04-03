@@ -3,6 +3,7 @@ var express = require("express");
 
 /** Internal Modules **/
 const Cliente = require("../Models/Cliente");
+const Emprestimo = require("../Models/Emprestimo")
 const db = require("../Models/db");
 
 var router = express.Router();
@@ -24,7 +25,17 @@ router.get("/clientes/:id", async (req, res) => {
       id: req.params.id
     }
   })
-    .then(ev => res.json(ev))
+    .then(ev => {
+      const cliente = ev[0];
+      const emprestimos = Emprestimo.findAll({
+        where: {
+          idCliente: cliente.id
+        }
+      }).then(ev => {
+
+        res.send({cliente: cliente, emprestimos: ev});
+      });
+    })
     .catch(error => res.status(400).send(error));
 });
 

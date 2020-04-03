@@ -20,6 +20,14 @@ const Emprestimo = db.sequelize.define("emprestimos", {
   dataInicio: {
     type: db.Sequelize.DATE,
     allowNull: false
+  },
+  status: {
+    type: db.Sequelize.INTEGER,
+    allowNull: true,
+    references: {
+      model: "statuses",
+      key: "id"
+    }
   }
 });
 
