@@ -16,7 +16,19 @@ const dia = 24 * 60 * 60 * 1000;
 
 /** Todos os emprestimos **/
 router.get("/emprestimos", async (req, res) => {
-  await Emprestimo.findAll().then(ev => res.json(ev));
+  await db.sequelize.query(
+    "SELECT 'clientes'.'name' as 'Cliente'," +
+    "       'emprestimos'.'idEmprestimo'," +
+    "       'emprestimos'.'valorEmprestimo'," +
+    "	      'emprestimos'.'valorPago'," +
+    "	      'emprestimos'.'numParcelas'," +
+    "	      'emprestimos'.'numParcelasPagas'," +
+    "	      'emprestimos'.'dataInicio'," +
+    "	      'emprestimos'.'pago'" +
+    "  FROM 'emprestimos'" +
+    "  JOIN 'clientes' on 'emprestimos'.'idCliente' = 'clientes'.'id'" + 
+    "  ORDER BY 'emprestimos'.'pago' ASC, 'clientes'.'name' ASC"
+  ).then(ev => res.json(ev[0]));
 });
 
 /*

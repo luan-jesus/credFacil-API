@@ -1,4 +1,5 @@
 const db = require("./db");
+const Emprestimo = require("./Emprestimo");
 
 const Cliente = db.sequelize.define("clientes", {
   id: { 

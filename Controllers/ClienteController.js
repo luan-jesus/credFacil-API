@@ -21,18 +21,19 @@ router.get("/clientes", async (req, res) => {
 /** Fetch customer by id **/
 router.get("/clientes/:id", async (req, res) => {
   await Cliente.findAll({
+    attributes: ['id', 'name'],
     where: {
       id: req.params.id
     }
   })
-    .then(ev => {
+    .then(async (ev) => {
       const cliente = ev[0];
-      const emprestimos = Emprestimo.findAll({
+      await Emprestimo.findAll({
+        attributes: ['idEmprestimo', 'valorEmprestimo', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio', 'pago'],
         where: {
           idCliente: cliente.id
         }
       }).then(ev => {
-
         res.send({cliente: cliente, emprestimos: ev});
       });
     })

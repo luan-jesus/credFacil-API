@@ -4,12 +4,18 @@ const Emprestimo = db.sequelize.define("emprestimos", {
   idCliente: {
     type: db.Sequelize.INTEGER,
     allowNull: false,
-    references: {
-      model: "clientes",
-      key: "id"
-    }
+    primaryKey: true
+  },
+  idEmprestimo: {
+    type: db.Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
   },
   valorEmprestimo: {
+    type: db.Sequelize.DECIMAL,
+    allowNull: false
+  },
+  valorPago: {
     type: db.Sequelize.DECIMAL,
     allowNull: false
   },
@@ -17,17 +23,17 @@ const Emprestimo = db.sequelize.define("emprestimos", {
     type: db.Sequelize.INTEGER,
     allowNull: false
   },
+  numParcelasPagas: {
+    type: db.Sequelize.INTEGER,
+    allowNull: false
+  },
   dataInicio: {
     type: db.Sequelize.DATE,
     allowNull: false
   },
-  status: {
+  pago: {
     type: db.Sequelize.INTEGER,
-    allowNull: true,
-    references: {
-      model: "statuses",
-      key: "id"
-    }
+    allowNull: true
   }
 });
 

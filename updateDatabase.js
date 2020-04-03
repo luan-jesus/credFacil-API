@@ -4,18 +4,22 @@
  * Isto também populará as tabelas do banco de dados com dados ficticios
  */
 
-const Status = require("./Models/Status");
 const Cliente = require("./Models/Cliente");
 const Emprestimo = require("./Models/Emprestimo");
 const Parcela = require("./Models/Parcela");
 const User = require("./Models/User");
 
 const attDB = async () => {
-  Status.sync({ force: true });
   Cliente.sync({ force: true });
   Emprestimo.sync({ force: true });
   Parcela.sync({ force: true });
   User.sync({ force: true });
+
+  Cliente.hasMany(Emprestimo, {foreignKey: 'idCliente'});
+  Emprestimo.hasOne(Cliente, {foreignKey: 'idCliente'});
+
+  Emprestimo.hasMany(Parcela, {foreignKey: 'idEmprestimo'});
+  Parcela.hasOne(Emprestimo, {foreignKey: 'idEmprestimo'});
 
   console.log("Aguardando 5 segundos para atualizar as tabelas");
   await wait(1000);
@@ -23,14 +27,6 @@ const attDB = async () => {
 };
 
 attDB().then(() => {
-  Status.bulkCreate([
-    {
-      statusName: "Pendente"
-    },
-    {
-      statusName: "Concluido"
-    }
-  ]);
   User.bulkCreate([
     {
       username: "admin",
@@ -61,31 +57,43 @@ attDB().then(() => {
   Emprestimo.bulkCreate([
     {
       idCliente: 1,
+      idEmprestimo: 1,
       valorEmprestimo: 1100,
+      valorPago: 0,
+      numParcelasPagas: 0,
       numParcelas: 11,
       dataInicio: new Date("01/11/2019"),
-      status: 1
+      pago: 1
     },
     {
       idCliente: 2,
+      idEmprestimo: 1,
       valorEmprestimo: 2400,
+      valorPago: 0,
+      numParcelasPagas: 0,
       numParcelas: 24,
       dataInicio: new Date("01/11/2019"),
-      status: 1
+      pago: 1
     },
     {
       idCliente: 3,
+      idEmprestimo: 1,
       valorEmprestimo: 700,
+      valorPago: 0,
+      numParcelasPagas: 0,
       numParcelas: 7,
       dataInicio: new Date("01/11/2019"),
-      status: 1
+      pago: 1
     },
     {
       idCliente: 4,
+      idEmprestimo: 1,
       valorEmprestimo: 1400,
+      valorPago: 0,
+      numParcelasPagas: 0,
       numParcelas: 14,
       dataInicio: new Date("01/11/2019"),
-      status: 1
+      pago: 1
     }
   ]);
 
