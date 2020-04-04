@@ -23,6 +23,12 @@ const Parcela = db.sequelize.define("parcelas", {
   },
   dataParcela: {
     type: db.Sequelize.DATE
+  },
+  dataPagamento: {
+    type: db.Sequelize.DATE
+  },
+  idUserRecebeu: {
+    type: db.Sequelize.INTEGER
   }
 });
 

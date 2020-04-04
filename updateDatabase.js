@@ -31,12 +31,14 @@ attDB().then(() => {
     {
       username: "admin",
       password: "admin",
-      authLevel: 2
+      authLevel: 2,
+      name: "Administrador"
     },
     {
       username: "user",
       password: "user",
-      authLevel: 1
+      authLevel: 1,
+      name: "Motoboy"
     }
   ]);
   Cliente.bulkCreate([

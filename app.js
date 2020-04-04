@@ -7,6 +7,7 @@ const parcelaController = require("./Controllers/parcelaController");
 const clienteController = require("./Controllers/clienteController");
 const emprestimoController = require("./Controllers/emprestimoController");
 const authController = require("./Controllers/authController");
+const userController = require("./Controllers/userController");
 
 /** Express setup **/
 const app = express();
@@ -18,6 +19,7 @@ app.use("/", parcelaController);
 app.use("/", clienteController);
 app.use("/", emprestimoController);
 app.use("/", authController);
+app.use("/", userController);
 
 /** Server deployment **/
 app.listen(5000, () => console.log("Server running at port 5000"));
