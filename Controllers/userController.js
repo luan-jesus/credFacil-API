@@ -44,7 +44,7 @@ router.get("/users", async (req, res) => {
 /** Fetch user by id **/
 router.get("/users/:id", async (req, res) => {
   await User.findOne({
-    attributes: ["id", "username", "authLevel", "name"],
+    attributes: ["id", "username", "password", "authLevel", "name"],
     where: {
       id: req.params.id,
     },
@@ -59,11 +59,12 @@ router.get("/users/:id", async (req, res) => {
           dataPagamento: today()
         }
       });
-      var {id, username, authLevel, name} = ev
+      var {id, username, password, authLevel, name} = ev
       var {totalRecebido} = totReceb[0].dataValues
       var obectToReturn = {
         id: id,
         username: username,
+        password: password,
         authLevel: authLevel,
         name: name,
         totalRecebido: totalRecebido
@@ -77,41 +78,61 @@ router.get("/users/:id", async (req, res) => {
  * POST
  */
 
-/** Create new Customer
+/** Create new User
+ * @Param username
+ * @Param password
+ * @Param authLevel
  * @Param name
  * **/
-router.post("/clientes", async (req, res) => {
-  var body = req.body;
-  if (!body.name) {
-    res.status(400).send("name is required");
+router.post("/users", async (req, res) => {
+  var {username, password, name, authLevel} = req.body;
+  if (!username || !password || !name || !authLevel) {
+    res.status(400).send("Body is missing required parameters.");
   } else {
-    try {
-      await db.sequelize.transaction(async (t) => {
-        await Cliente.create(
-          {
-            name: body.name,
-          },
-          { transaction: t }
-        ).then(() => res.status(201).send());
-      });
-    } catch (error) {
-      res.status(400).send(JSON.stringify(error));
+    const findUser = await User.findOne({
+      where: {
+        username: username
+      }
+    });
+    if (findUser){
+      res.status(400).send("Usuário ja existe.");
+    } else {
+      try {
+        await db.sequelize.transaction(async (t) => {
+          await User.create(
+            {
+              username: username.toLowerCase(),
+              password: password,
+              authLevel: authLevel,
+              name: name,
+            },
+            { transaction: t }
+          ).then(() => res.status(201).send());
+        });
+      } catch (error) {
+        res.status(400).send(JSON.stringify(error));
+      }
     }
   }
 });
 
 /** Update Customer
  * @Param id
+ * @Param username
+ * @Param password
+ * @Param authLevel
  * @Param name
  * **/
-router.put("/clientes", async (req, res) => {
-  var { id, name } = req.body;
-  if (id && name) {
+router.put("/users", async (req, res) => {
+  var {id, password, name, authLevel} = req.body;
+  if (id && password && name && authLevel) {
     try {
       await db.sequelize.transaction(async (t) => {
-        await Cliente.update(
+        await User.update(
           {
+            password: password,
             name: name,
+            authLevel: authLevel
           },
           {
             where: { id: id },
@@ -125,23 +146,23 @@ router.put("/clientes", async (req, res) => {
       res.status(400).send(JSON.stringify(error));
     }
   } else {
-    res.status(400).send("Body is missing required parametens");
+    res.status(400).send("Body is missing required parameters");
   }
 });
 
 /** Delete Customer **/
-router.delete("/clientes/:id", async (req, res) => {
+router.delete("/users/:id", async (req, res) => {
   try {
     await db.sequelize.transaction(async (t) => {
-      let CustomerToDelete = await Cliente.findOne({
+      let UserToDelete = await User.findOne({
         where: { id: req.params.id },
       }).catch((e) => {
         console.log(e.message);
       });
-      if (!CustomerToDelete) {
+      if (!UserToDelete) {
         res.status(404).send("Record not found");
       } else {
-        await CustomerToDelete.destroy({ transaction: t }).then(() => {
+        await UserToDelete.destroy({ transaction: t }).then(() => {
           res.status(200).send();
         });
       }
