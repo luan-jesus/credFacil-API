@@ -2,7 +2,6 @@
 var express = require("express");
 
 /** Internal Modules **/
-const Cliente = require("../Models/Cliente");
 const User = require("../Models/User");
 const Parcela = require("../Models/Parcela");
 const db = require("../Models/db");

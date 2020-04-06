@@ -113,6 +113,7 @@ attDB().then(() => {
       DataParcela = new Date(DataParcela.getTime() + dia);
     }
     Parcela.create({
+      idCliente: 1,
       idEmprestimo: 1,
       parcelaNum: i + 1,
       valorParcela: 100,
@@ -133,7 +134,8 @@ attDB().then(() => {
       DataParcela = new Date(DataParcela.getTime() + dia);
     }
     Parcela.create({
-      idEmprestimo: 2,
+      idCliente: 2,
+      idEmprestimo: 1,
       parcelaNum: i + 1,
       valorParcela: 100,
       cobrado: false,
@@ -153,7 +155,8 @@ attDB().then(() => {
       DataParcela = new Date(DataParcela.getTime() + dia);
     }
     Parcela.create({
-      idEmprestimo: 3,
+      idCliente: 3,
+      idEmprestimo: 1,
       parcelaNum: i + 1,
       valorParcela: 100,
       cobrado: false,
@@ -173,7 +176,8 @@ attDB().then(() => {
       DataParcela = new Date(DataParcela.getTime() + dia);
     }
     Parcela.create({
-      idEmprestimo: 4,
+      idCliente: 4,
+      idEmprestimo: 1,
       parcelaNum: i + 1,
       valorParcela: 100,
       cobrado: false,

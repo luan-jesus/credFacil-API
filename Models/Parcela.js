@@ -1,6 +1,10 @@
 const db = require("./db");
 
 const Parcela = db.sequelize.define("parcelas", {
+  idCliente: {
+    type: db.Sequelize.INTEGER,
+    primaryKey: true
+  },
   idEmprestimo: {
     type: db.Sequelize.INTEGER,
     primaryKey: true

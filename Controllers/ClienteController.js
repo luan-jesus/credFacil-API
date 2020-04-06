@@ -29,7 +29,7 @@ router.get("/clientes/:id", async (req, res) => {
     .then(async (ev) => {
       const cliente = ev[0];
       await Emprestimo.findAll({
-        attributes: ['idEmprestimo', 'valorEmprestimo', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio', 'pago'],
+        attributes: ['idCliente', 'idEmprestimo', 'valorEmprestimo', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio', 'pago'],
         where: {
           idCliente: cliente.id
         }

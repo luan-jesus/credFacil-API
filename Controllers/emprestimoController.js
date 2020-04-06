@@ -18,6 +18,7 @@ const dia = 24 * 60 * 60 * 1000;
 router.get("/emprestimos", async (req, res) => {
   await db.sequelize.query(
     "SELECT 'clientes'.'name' as 'Cliente'," +
+    "       'emprestimos'.'idCliente'," +
     "       'emprestimos'.'idEmprestimo'," +
     "       'emprestimos'.'valorEmprestimo'," +
     "	      'emprestimos'.'valorPago'," +
@@ -30,6 +31,34 @@ router.get("/emprestimos", async (req, res) => {
     "  ORDER BY 'emprestimos'.'pago' ASC, 'clientes'.'name' ASC"
   ).then(ev => res.json(ev[0]));
 });
+
+router.get("/emprestimos/:idCliente/:idEmprestimo", async (req, res) => {
+  const {idCliente, idEmprestimo} = req.params;
+  await db.sequelize.query(
+    "SELECT 'clientes'.'name'," +
+    "       'emprestimos'.'idEmprestimo'," +
+    "       'emprestimos'.'valorEmprestimo'," +
+    "       'emprestimos'.'valorPago'," +
+    "       'emprestimos'.'numParcelas'," +
+    "       'emprestimos'.'numParcelasPagas'," +
+    "       'emprestimos'.'dataInicio'," +
+    "       'emprestimos'.'pago'" +
+    " FROM  'emprestimos'" +
+    " JOIN  'clientes' ON 'emprestimos'.'idCliente' = 'clientes'.'id'" +
+    " WHERE 'emprestimos'.'idCliente' = " + idCliente + " AND 'emprestimos'.'idEmprestimo' = " + idEmprestimo
+  ).then(async (ev) => {
+    var emprestimo = ev[0][0];
+    await Parcela.findAll({
+      attributes: ['parcelaNum', 'valorParcela', 'cobrado', 'valorPago', 'pago', 'dataParcela', 'dataPagamento', 'idUserRecebeu'],
+      where: {
+        idCliente: idCliente,
+        idEmprestimo: idEmprestimo
+      }
+    }).then(parcelas => {
+      res.send({emprestimo: emprestimo, parcelas: parcelas});
+    })
+  });
+})
 
 /*
  * POST
