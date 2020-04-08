@@ -10,7 +10,7 @@ var router = express.Router();
  * GET
  */
 
-/** Todos os clientes **/
+/** Login **/
 router.post("/auth/login", async (req, res) => {
   var body = req.body;
   if (typeof body.username === "undefined") {
@@ -18,7 +18,7 @@ router.post("/auth/login", async (req, res) => {
   } else if (typeof body.password === "undefined") {
     res.status(400).send("Password is required!");
   } else {
-    await User.findAll({
+    await User.findOne({
       where: {
         username: body.username.toLowerCase(),
         password: body.password.toLowerCase()
@@ -28,8 +28,8 @@ router.post("/auth/login", async (req, res) => {
           res.status(401).send();
         } else {
           res.status(200).send({
-            authLevel: user[0].authLevel,
-            username: user[0].username
+            authLevel: user.authLevel,
+            username: user.username
           });
         }
       })

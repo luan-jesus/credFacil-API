@@ -11,7 +11,16 @@ const Emprestimo = db.sequelize.define("emprestimos", {
     allowNull: false,
     primaryKey: true
   },
+  status: {
+    type: db.Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: -1
+  },
   valorEmprestimo: {
+    type: db.Sequelize.DECIMAL,
+    allowNull: false
+  },
+  valorAReceber: {
     type: db.Sequelize.DECIMAL,
     allowNull: false
   },
@@ -30,10 +39,6 @@ const Emprestimo = db.sequelize.define("emprestimos", {
   dataInicio: {
     type: db.Sequelize.DATE,
     allowNull: false
-  },
-  pago: {
-    type: db.Sequelize.INTEGER,
-    allowNull: true
   }
 });
 

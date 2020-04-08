@@ -1,4 +1,5 @@
 const db = require("./db");
+const Emprestimo = require('./Emprestimo');
 
 const Parcela = db.sequelize.define("parcelas", {
   idCliente: {
@@ -7,11 +8,16 @@ const Parcela = db.sequelize.define("parcelas", {
   },
   idEmprestimo: {
     type: db.Sequelize.INTEGER,
-    primaryKey: true
+    primaryKey: true,
   },
   parcelaNum: {
     type: db.Sequelize.INTEGER,
     primaryKey: true
+  },
+  status: {
+    type: db.Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: -1
   },
   valorParcela: {
     type: db.Sequelize.DECIMAL
@@ -22,13 +28,7 @@ const Parcela = db.sequelize.define("parcelas", {
   valorPago: {
     type: db.Sequelize.DECIMAL
   },
-  pago: {
-    type: db.Sequelize.BOOLEAN
-  },
   dataParcela: {
-    type: db.Sequelize.DATE
-  },
-  dataPagamento: {
     type: db.Sequelize.DATE
   },
   idUserRecebeu: {

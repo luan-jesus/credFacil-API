@@ -26,6 +26,8 @@ router.get("/users/motoboys", async (req, res) => {
     "	      SUM('parcelas'.'valorPago') as 'receivedToday' " +
     "FROM 'users' " +
     "LEFT OUTER JOIN 'parcelas' ON 'users'.'id' = 'parcelas'.'idUserRecebeu' " +
+    "                          AND 'parcelas'.'cobrado' = 1 " +
+    "                          AND 'parcelas'.'dataParcela' LIKE '" + today().toISOString().substring(0, 10) + "%' " +
     "WHERE 'users'.'authLevel' = 1 "  + 
     "GROUP BY 'users'.'id'" 
   )
@@ -55,7 +57,7 @@ router.get("/users/:id", async (req, res) => {
         ],
         where: {
           idUserRecebeu: req.params.id,
-          dataPagamento: today()
+          dataParcela: today()
         }
       });
       var {id, username, password, authLevel, name} = ev

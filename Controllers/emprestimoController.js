@@ -14,21 +14,43 @@ const dia = 24 * 60 * 60 * 1000;
  * GET
  */
 
-/** Todos os emprestimos **/
-router.get("/emprestimos", async (req, res) => {
+/** Todos os emprestimos em andamento **/
+router.get("/emprestimos/andamento", async (req, res) => {
   await db.sequelize.query(
     "SELECT 'clientes'.'name' as 'Cliente'," +
     "       'emprestimos'.'idCliente'," +
     "       'emprestimos'.'idEmprestimo'," +
     "       'emprestimos'.'valorEmprestimo'," +
+    "       'emprestimos'.'valorAReceber'," +
     "	      'emprestimos'.'valorPago'," +
     "	      'emprestimos'.'numParcelas'," +
     "	      'emprestimos'.'numParcelasPagas'," +
     "	      'emprestimos'.'dataInicio'," +
-    "	      'emprestimos'.'pago'" +
+    "	      'emprestimos'.'status'" +
     "  FROM 'emprestimos'" +
     "  JOIN 'clientes' on 'emprestimos'.'idCliente' = 'clientes'.'id'" + 
-    "  ORDER BY 'emprestimos'.'pago' ASC, 'clientes'.'name' ASC"
+    " WHERE 'emprestimos'.'status' = -1" + 
+    "  ORDER BY 'emprestimos'.'dataInicio' DESC, 'clientes'.'name' ASC"
+  ).then(ev => res.json(ev[0]));
+});
+
+/** Todos os emprestimos **/
+router.get("/emprestimos/historico", async (req, res) => {
+  await db.sequelize.query(
+    "SELECT 'clientes'.'name' as 'Cliente'," +
+    "       'emprestimos'.'idCliente'," +
+    "       'emprestimos'.'idEmprestimo'," +
+    "       'emprestimos'.'valorEmprestimo'," +
+    "       'emprestimos'.'valorAReceber'," +
+    "	      'emprestimos'.'valorPago'," +
+    "	      'emprestimos'.'numParcelas'," +
+    "	      'emprestimos'.'numParcelasPagas'," +
+    "	      'emprestimos'.'dataInicio'," +
+    "	      'emprestimos'.'status'" +
+    "  FROM 'emprestimos'" +
+    "  JOIN 'clientes' on 'emprestimos'.'idCliente' = 'clientes'.'id'" + 
+    " WHERE 'emprestimos'.'status' <> -1" + 
+    "  ORDER BY 'emprestimos'.'dataInicio' DESC, 'clientes'.'name' ASC"
   ).then(ev => res.json(ev[0]));
 });
 
@@ -38,18 +60,19 @@ router.get("/emprestimos/:idCliente/:idEmprestimo", async (req, res) => {
     "SELECT 'clientes'.'name'," +
     "       'emprestimos'.'idEmprestimo'," +
     "       'emprestimos'.'valorEmprestimo'," +
+    "       'emprestimos'.'valorAReceber'," +
     "       'emprestimos'.'valorPago'," +
     "       'emprestimos'.'numParcelas'," +
     "       'emprestimos'.'numParcelasPagas'," +
     "       'emprestimos'.'dataInicio'," +
-    "       'emprestimos'.'pago'" +
+    "       'emprestimos'.'status'" +
     " FROM  'emprestimos'" +
     " JOIN  'clientes' ON 'emprestimos'.'idCliente' = 'clientes'.'id'" +
     " WHERE 'emprestimos'.'idCliente' = " + idCliente + " AND 'emprestimos'.'idEmprestimo' = " + idEmprestimo
   ).then(async (ev) => {
     var emprestimo = ev[0][0];
     await Parcela.findAll({
-      attributes: ['parcelaNum', 'valorParcela', 'cobrado', 'valorPago', 'pago', 'dataParcela', 'dataPagamento', 'idUserRecebeu'],
+      attributes: ['parcelaNum', 'valorParcela', 'cobrado', 'valorPago', 'status', 'dataParcela', 'idUserRecebeu'],
       where: {
         idCliente: idCliente,
         idEmprestimo: idEmprestimo
@@ -66,39 +89,51 @@ router.get("/emprestimos/:idCliente/:idEmprestimo", async (req, res) => {
 
 /** Cadastrar novo emprestimo **/
 router.post("/emprestimos", async (req, res) => {
-  var body = req.body;
+  var {idCliente, valorEmprestimo, valorAReceber, numParcelas, dataInicio} = req.body;
   const transaction = await db.sequelize.transaction();
   try {
     var emprestimo;
-    await Emprestimo.create(
-      {
-        idCliente: body.idCliente,
-        valorEmprestimo: body.valorEmprestimo,
-        numParcelas: body.numParcelas
-      },
-      { transaction: transaction }
-    ).then(ev => {
-      emprestimo = ev;
-    });
 
-    var today = new Date();
-    for (var i = 1; i <= body.numParcelas; i++) {
-      do {
-        today = new Date(today.getTime() + dia);
-      } while (today.getDay() == 6);
+    await Emprestimo.max('idEmprestimo', { where: { idCliente: idCliente }})
+      .then(async id => {
+        await Emprestimo.create(
+          {
+            idCliente: idCliente,
+            idEmprestimo: id ? id + 1 : 1,
+            valorEmprestimo: valorEmprestimo,
+            valorAReceber: valorAReceber,
+            numParcelas: numParcelas,
+            dataInicio: dataInicio,
+            status: -1,
+            valorPago: 0,
+            numParcelasPagas: 0
+          },
+          { transaction: transaction }
+        ).then(ev => {
+          emprestimo = ev;
+        });
+      });
 
+    var dataParcela = new Date(dataInicio);
+    for (var i = 1; i <= numParcelas; i++) {
       await Parcela.create(
         {
-          idEmprestimo: emprestimo.id,
+          idCliente: emprestimo.idCliente,
+          idEmprestimo: emprestimo.idEmprestimo,
           parcelaNum: i,
-          valorParcela: emprestimo.valorEmprestimo / emprestimo.numParcelas,
+          status: -1,
+          valorParcela: emprestimo.valorAReceber / emprestimo.numParcelas,
           cobrado: false,
           valorPago: 0,
-          pago: false,
-          dataParcela: today
+          dataParcela: dataParcela,
+          idUserRecebeu: null
         },
         { transaction: transaction }
       );
+
+      do {
+        dataParcela = new Date(dataParcela.getTime() + dia);
+      } while (dataParcela.getDay() == 6);
     }
 
     await transaction.commit();

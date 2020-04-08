@@ -14,25 +14,32 @@ var router = express.Router();
 
 /** Fetch all Customer **/
 router.get("/clientes", async (req, res) => {
-  await Cliente.findAll()
+  await Cliente.findAll({
+    order: [
+      ['name', 'ASC']
+    ]
+  })
     .then(ev => res.json(ev))
     .catch(error => res.status(400).send(error));
 });
 /** Fetch customer by id **/
 router.get("/clientes/:id", async (req, res) => {
-  await Cliente.findAll({
+  await Cliente.findOne({
     attributes: ['id', 'name'],
     where: {
       id: req.params.id
     }
   })
     .then(async (ev) => {
-      const cliente = ev[0];
+      const cliente = ev;
       await Emprestimo.findAll({
-        attributes: ['idCliente', 'idEmprestimo', 'valorEmprestimo', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio', 'pago'],
+        attributes: ['idCliente', 'idEmprestimo', 'status', 'valorEmprestimo', 'valorAReceber', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio'],
         where: {
           idCliente: cliente.id
-        }
+        },
+        order: [
+          ['idEmprestimo', 'DESC']
+        ]
       }).then(ev => {
         res.send({cliente: cliente, emprestimos: ev});
       });
