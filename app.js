@@ -4,7 +4,7 @@ const cors = require('cors');
 
 /** Internal modules **/
 const parcelaController = require("./Controllers/parcelaController");
-const clienteController = require("./Controllers/clienteController");
+const clienteController = require("./Controllers/ClienteController");
 const emprestimoController = require("./Controllers/emprestimoController");
 const authController = require("./Controllers/authController");
 const userController = require("./Controllers/userController");
