@@ -3,6 +3,7 @@ var express = require("express");
 
 /** Internal Modules **/
 const Parcela = require("../Models/Parcela");
+const db = require("../Models/db");
 
 var router = express.Router();
 
@@ -13,38 +14,30 @@ var router = express.Router();
 /** Todas as parcelas de hoje **/
 router.get("/parcelas/today", async (req, res) => {
   var today = new Date();
-  await Parcela.findAll({
-    attributes: [
-      "idEmprestimo",
-      "parcelaNum",
-      "valorParcela",
-      "cobrado",
-      "valorPago",
-      "pago",
-      "dataParcela"
-    ],
-    where: {
-      dataParcela: new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    }
-  }).then(ev => res.json(ev));
+  await db.sequelize.query(
+    "SELECT 'clientes'.'name', " +
+    "       'parcelas'.'idEmprestimo', " +
+    "       'parcelas'.'parcelaNum', " +
+    "       'parcelas'.'valorParcela', " +
+    "       'parcelas'.'dataParcela' " +
+    "FROM 'parcelas' " +
+    "JOIN 'clientes' on 'parcelas'.'idCliente' = 'clientes'.'id' " +
+    "WHERE 'parcelas'.'dataParcela' LIKE '" + today.toISOString().substring(0, 10) + "%' " +
+    "AND 'parcelas'.'status' = -1"
+  ).then(ev => {
+    res.send(ev[0]) 
+  }) 
 });
 
-/** Todas as parcelas de determinado Emprestimo **/
-router.get("/parcelas/:idEmprestimo", async (req, res) => {
-  await Parcela.findAll({
-    attributes: [
-      "idEmprestimo",
-      "parcelaNum",
-      "valorParcela",
-      "cobrado",
-      "valorPago",
-      "pago",
-      "dataParcela"
-    ],
+/** Determinada parcela **/
+router.get('/parcelas/:idCliente/:idEmprestimo/:parcelaNum', async (req, res) => {
+  await Parcela.findOne({
     where: {
-      idEmprestimo: req.params.idEmprestimo
+      idCliente: parseInt(req.params.idCliente),
+      idEmprestimo: parseInt(req.params.idEmprestimo),
+      parcelaNum: parseInt(req.params.parcelaNum)
     }
-  }).then(ev => res.json(ev))
+  }).then(ev => res.send(ev))
     .catch(error => res.status(400).send(error));
 });
 

@@ -3,7 +3,7 @@ var express = require("express");
 
 /** Internal Modules **/
 const Cliente = require("../Models/Cliente");
-const Emprestimo = require("../Models/Emprestimo")
+const Emprestimo = require("../Models/Emprestimo");
 const db = require("../Models/db");
 
 var router = express.Router();
@@ -15,56 +15,61 @@ var router = express.Router();
 /** Fetch all Customer **/
 router.get("/clientes", async (req, res) => {
   await Cliente.findAll({
-    order: [
-      ['name', 'ASC']
-    ]
+    order: [["name", "ASC"]],
   })
-    .then(ev => res.json(ev))
-    .catch(error => res.status(400).send(error));
+    .then((ev) => res.json(ev))
+    .catch((error) => res.status(400).send(error));
 });
 /** Fetch customer by id **/
 router.get("/clientes/:id", async (req, res) => {
   await Cliente.findOne({
-    attributes: ['id', 'name'],
+    attributes: ["id", "name"],
     where: {
-      id: req.params.id
-    }
+      id: req.params.id,
+    },
   })
     .then(async (ev) => {
       const cliente = ev;
       await Emprestimo.findAll({
-        attributes: ['idCliente', 'idEmprestimo', 'status', 'valorEmprestimo', 'valorAReceber', 'valorPago', 'numParcelas', 'numParcelasPagas', 'dataInicio'],
+        attributes: [
+          "idCliente",
+          "idEmprestimo",
+          "status",
+          "valorEmprestimo",
+          "valorAReceber",
+          "valorPago",
+          "numParcelas",
+          "numParcelasPagas",
+          "dataInicio",
+        ],
         where: {
-          idCliente: cliente.id
+          idCliente: cliente.id,
         },
-        order: [
-          ['idEmprestimo', 'DESC']
-        ]
-      }).then(ev => {
-        res.send({cliente: cliente, emprestimos: ev});
+        order: [["idEmprestimo", "DESC"]],
+      }).then((ev) => {
+        res.send({ cliente: cliente, emprestimos: ev });
       });
     })
-    .catch(error => res.status(400).send(error));
+    .catch((error) => res.status(400).send(error));
 });
-
 
 /*
  * POST
  */
 
-/** Create new Customer 
+/** Create new Customer
  * @Param name
  * **/
 router.post("/clientes", async (req, res) => {
   var body = req.body;
-  if (!body.name){
-    res.status(400).send('name is required');
+  if (!body.name) {
+    res.status(400).send("name is required");
   } else {
     try {
-      await db.sequelize.transaction(async t => {
+      await db.sequelize.transaction(async (t) => {
         await Cliente.create(
           {
-            name: body.name
+            name: body.name,
           },
           { transaction: t }
         ).then(() => res.status(201).send());
@@ -75,50 +80,54 @@ router.post("/clientes", async (req, res) => {
   }
 });
 
-/** Update Customer 
+/** Update Customer
  * @Param id
  * @Param name
  * **/
 router.put("/clientes", async (req, res) => {
-  var {id, name} = req.body;
-  if (id && name){
+  var { id, name } = req.body;
+  if (id && name) {
     try {
-      await db.sequelize.transaction(async t => {
+      await db.sequelize.transaction(async (t) => {
         await Cliente.update(
           {
-            name: name
+            name: name,
           },
           {
-            where: {id: id}
+            where: { id: id },
           },
           { transaction: t }
-        ).then(rowsAffected => res.status(200).send({rowsAffected: rowsAffected[0]}));
+        ).then((rowsAffected) =>
+          res.status(200).send({ rowsAffected: rowsAffected[0] })
+        );
       });
     } catch (error) {
       res.status(400).send(JSON.stringify(error));
     }
   } else {
-    res.status(400).send('Body is missing required parametens');
+    res.status(400).send("Body is missing required parametens");
   }
 });
 
 /** Delete Customer **/
 router.delete("/clientes/:id", async (req, res) => {
   try {
-    await db.sequelize.transaction(async t => {
-      let CustomerToDelete = await Cliente.findOne({where: {id: req.params.id}}).catch(e => {
-        console.log(e.message)
-     });
-     if (!CustomerToDelete){
-      res.status(404).send('Record not found');
-     } else {
-      await CustomerToDelete.destroy({transaction: t }).then(() => {
-        res.status(200).send();
+    await db.sequelize.transaction(async (t) => {
+      let CustomerToDelete = await Cliente.findOne({
+        where: { id: req.params.id },
+      }).catch((e) => {
+        console.log(e.message);
       });
-     }
-    })
+      if (!CustomerToDelete) {
+        res.status(404).send("Record not found");
+      } else {
+        await CustomerToDelete.destroy({ transaction: t }).then(() => {
+          res.status(200).send();
+        });
+      }
+    });
   } catch (error) {
     res.status(400).send(JSON.stringify(error));
   }
-})
+});
 module.exports = router;

@@ -28,6 +28,7 @@ router.post("/auth/login", async (req, res) => {
           res.status(401).send();
         } else {
           res.status(200).send({
+            id: user.id,
             authLevel: user.authLevel,
             username: user.username
           });
