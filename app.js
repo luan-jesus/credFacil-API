@@ -22,4 +22,4 @@ app.use("/", authController);
 app.use("/", userController);
 
 /** Server deployment **/
-app.listen(8081, () => console.log("Server running at port 8081"));
+app.listen(process.env.PORT || 5000);
