@@ -2,7 +2,7 @@
 var express = require("express");
 
 /** Internal Modules **/
-const User = require("../Models/User");
+const User = require("../Models/").user;
 
 var router = express.Router();
 
@@ -12,31 +12,32 @@ var router = express.Router();
 
 /** Login **/
 router.post("/auth/login", async (req, res) => {
-  var body = req.body;
-  if (typeof body.username === "undefined") {
+  var { username, password } = req.body;
+  if (!username) {
     res.status(400).send("Username is required!");
-  } else if (typeof body.password === "undefined") {
+  } else if (!password) {
     res.status(400).send("Password is required!");
   } else {
-    await User.findOne({
-      where: {
-        username: body.username.toLowerCase(),
-        password: body.password.toLowerCase()
-      }
-    }).then(user => {
+    try {
+      await User.findOne({
+        where: {
+          username: username.toLowerCase(),
+          password: password.toLowerCase(),
+        },
+      }).then((user) => {
         if (user.length === 0) {
           res.status(401).send();
         } else {
           res.status(200).send({
             id: user.id,
             authLevel: user.authLevel,
-            username: user.username
+            username: user.username,
           });
         }
-      })
-      .catch(error => {
-        res.status(400).send(error);
       });
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
   }
 });
 

@@ -1,10 +1,14 @@
 /** External Modules **/
 var express = require("express");
+const { Op } = require('sequelize')
 
 /** Internal Modules **/
-const User = require("../Models/User");
-const Parcela = require("../Models/Parcela");
-const db = require("../Models/db");
+const User = require("../Models").user;
+const Parcela = require("../Models").parcela;
+const Emprestimo = require("../Models").Emprestimo;
+const sequelize = require("../Models").sequelize;
+// const Parcela = require("../Models/--Parcela");
+// const db = require("../Models/db");
 
 var router = express.Router();
 
@@ -19,60 +23,77 @@ function today() {
 
 /** Fetch all Motoboys **/
 router.get("/users/motoboys", async (req, res) => {
-  await db.sequelize.query(
-    "SELECT 'users'.'id', " +
-    "       'users'.'username', " +
-    "	      'users'.'name', " +
-    "	      SUM('parcelas'.'valorPago') as 'receivedToday' " +
-    "FROM 'users' " +
-    "LEFT OUTER JOIN 'parcelas' ON 'users'.'id' = 'parcelas'.'idUserRecebeu' " +
-    "                          AND 'parcelas'.'cobrado' = 1 " +
-    "                          AND 'parcelas'.'dataParcela' LIKE '" + today().toISOString().substring(0, 10) + "%' " +
-    "WHERE 'users'.'authLevel' = 1 "  + 
-    "GROUP BY 'users'.'id'" 
-  )
-    .then((ev) => res.json(ev[0]))
-    .catch((error) => res.status(400).send(error));
+  try {
+    await User.findAll({
+      attributes: [
+        'id', 
+        'name', 
+        'username',
+        [sequelize.fn('sum', sequelize.col('parcelas.valorPago')), 'receivedToday']
+      ],
+      order: [
+        ['name', 'ASC'],
+      ],
+      include: [{
+        attributes: [],
+        model: Parcela,
+        required: false,
+        where: {
+          dataParcela: today()
+        }
+      }],
+      group: ['user.id']
+    }).then(users => {
+      res.json(users);
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
 });
 /** Fetch all Users **/
 router.get("/users", async (req, res) => {
-  await User.findAll({
-    attributes: ["id", "username", "authLevel", "name"],
-  })
-    .then((ev) => res.json(ev))
-    .catch((error) => res.status(400).send(error));
+  try {
+    await User.findAll({
+      attributes: ["id", "username", "authLevel", "name"],
+    })
+      .then((ev) => res.json(ev))
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
 });
 /** Fetch user by id **/
 router.get("/users/:id", async (req, res) => {
-  await User.findOne({
-    attributes: ["id", "username", "password", "authLevel", "name"],
-    where: {
-      id: req.params.id,
-    },
-  })
-    .then(async (ev) => {
-      const totReceb = await Parcela.findAll({
-        attributes: [
-          [db.sequelize.fn('sum', db.sequelize.col('valorPago')), 'totalRecebido'],
-        ],
+  try {
+    await User.findOne({
+      attributes: [
+        'id', 
+        'name', 
+        'username',
+        'password',
+        'authLevel',
+        [sequelize.fn('sum', sequelize.col('parcelas.valorPago')), 'receivedToday']
+      ],
+      where: {
+        id: req.params.id
+      },
+      order: [
+        ['name', 'ASC'],
+      ],
+      include: [{
+        attributes: [],
+        model: Parcela,
+        required: false,
         where: {
-          idUserRecebeu: req.params.id,
           dataParcela: today()
         }
-      });
-      var {id, username, password, authLevel, name} = ev
-      var {totalRecebido} = totReceb[0].dataValues
-      var obectToReturn = {
-        id: id,
-        username: username,
-        password: password,
-        authLevel: authLevel,
-        name: name,
-        totalRecebido: totalRecebido
-      }
-      res.send(obectToReturn);
+      }],
+      group: ['user.id']
+    }).then(users => {
+      res.json(users);
     })
-    .catch((error) => res.status(400).send(error));
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
 });
 
 /*
@@ -111,7 +132,7 @@ router.post("/users", async (req, res) => {
           ).then(() => res.status(201).send());
         });
       } catch (error) {
-        res.status(400).send(JSON.stringify(error));
+        res.status(500).json({ error: error.toString() });
       }
     }
   }
@@ -144,7 +165,7 @@ router.put("/users", async (req, res) => {
         );
       });
     } catch (error) {
-      res.status(400).send(JSON.stringify(error));
+      res.status(500).json({ error: error.toString() });
     }
   } else {
     res.status(400).send("Body is missing required parameters");
@@ -169,7 +190,7 @@ router.delete("/users/:id", async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).send(JSON.stringify(error));
+    res.status(500).json({ error: error.toString() });
   }
 });
 module.exports = router;

@@ -1,38 +1,16 @@
-const db = require("./db");
-
-const Parcela = db.sequelize.define("parcelas", {
-  idCliente: {
-    type: db.Sequelize.INTEGER,
-    primaryKey: true
-  },
-  idEmprestimo: {
-    type: db.Sequelize.INTEGER,
-    primaryKey: true,
-  },
-  parcelaNum: {
-    type: db.Sequelize.INTEGER,
-    primaryKey: true
-  },
-  status: {
-    type: db.Sequelize.INTEGER,
-    allowNull: false,
-    defaultValue: -1
-  },
-  valorParcela: {
-    type: db.Sequelize.DECIMAL
-  },
-  cobrado: {
-    type: db.Sequelize.BOOLEAN
-  },
-  valorPago: {
-    type: db.Sequelize.DECIMAL
-  },
-  dataParcela: {
-    type: db.Sequelize.DATE
-  },
-  idUserRecebeu: {
-    type: db.Sequelize.INTEGER
-  }
-});
-
-module.exports = Parcela;
+'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const Parcela = sequelize.define('parcela', {
+    parcelaNum: DataTypes.INTEGER,
+    status: DataTypes.INTEGER,
+    valorParcela: DataTypes.DECIMAL,
+    cobrado: DataTypes.BOOLEAN,
+    valorPago: DataTypes.DECIMAL,
+    dataParcela: DataTypes.DATE
+  }, {});
+  Parcela.associate = function(models) {
+    Parcela.belongsTo(models.emprestimo);
+    Parcela.belongsTo(models.user);
+  };
+  return Parcela;
+};

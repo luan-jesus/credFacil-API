@@ -2,9 +2,9 @@
 var express = require("express");
 
 /** Internal Modules **/
-const Cliente = require("../Models/Cliente");
-const Emprestimo = require("../Models/Emprestimo");
-const db = require("../Models/db");
+const Cliente = require("../Models").cliente;
+const Emprestimo = require("../Models").emprestimo;
+const sequelize = require("../Models").sequelize;
 
 var router = express.Router();
 
@@ -22,35 +22,33 @@ router.get("/clientes", async (req, res) => {
 });
 /** Fetch customer by id **/
 router.get("/clientes/:id", async (req, res) => {
-  await Cliente.findOne({
-    attributes: ["id", "name"],
-    where: {
-      id: req.params.id,
-    },
-  })
-    .then(async (ev) => {
-      const cliente = ev;
-      await Emprestimo.findAll({
+  try {
+    await Cliente.findOne({
+      attributes: ["id", "name"],
+      where: {
+        id: req.params.id,
+      },
+      
+      include: [{
         attributes: [
-          "idCliente",
-          "idEmprestimo",
+          "id",
           "status",
           "valorEmprestimo",
           "valorAReceber",
           "valorPago",
           "numParcelas",
           "numParcelasPagas",
-          "dataInicio",
+          "dataInicio"
         ],
-        where: {
-          idCliente: cliente.id,
-        },
-        order: [["idEmprestimo", "DESC"]],
-      }).then((ev) => {
-        res.send({ cliente: cliente, emprestimos: ev });
-      });
-    })
-    .catch((error) => res.status(400).send(error));
+        model: Emprestimo,
+        required: false,
+        order: [["id", "DESC"]],
+        separate: true
+      }]
+    }).then(ev => res.send(ev));
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
 });
 
 /*
@@ -66,7 +64,7 @@ router.post("/clientes", async (req, res) => {
     res.status(400).send("name is required");
   } else {
     try {
-      await db.sequelize.transaction(async (t) => {
+      await sequelize.transaction(async (t) => {
         await Cliente.create(
           {
             name: body.name,
@@ -75,7 +73,7 @@ router.post("/clientes", async (req, res) => {
         ).then(() => res.status(201).send());
       });
     } catch (error) {
-      res.status(400).send(JSON.stringify(error));
+      res.status(500).json({ error: error.toString() });
     }
   }
 });
@@ -88,7 +86,7 @@ router.put("/clientes", async (req, res) => {
   var { id, name } = req.body;
   if (id && name) {
     try {
-      await db.sequelize.transaction(async (t) => {
+      await sequelize.transaction(async (t) => {
         await Cliente.update(
           {
             name: name,
@@ -102,7 +100,7 @@ router.put("/clientes", async (req, res) => {
         );
       });
     } catch (error) {
-      res.status(400).send(JSON.stringify(error));
+      res.status(500).json({ error: error.toString() });
     }
   } else {
     res.status(400).send("Body is missing required parametens");
@@ -112,12 +110,10 @@ router.put("/clientes", async (req, res) => {
 /** Delete Customer **/
 router.delete("/clientes/:id", async (req, res) => {
   try {
-    await db.sequelize.transaction(async (t) => {
+    await sequelize.transaction(async (t) => {
       let CustomerToDelete = await Cliente.findOne({
         where: { id: req.params.id },
-      }).catch((e) => {
-        console.log(e.message);
-      });
+      })
       if (!CustomerToDelete) {
         res.status(404).send("Record not found");
       } else {
@@ -127,7 +123,7 @@ router.delete("/clientes/:id", async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).send(JSON.stringify(error));
+    res.status(500).json({ error: error.toString() });
   }
 });
 module.exports = router;

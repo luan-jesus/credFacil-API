@@ -1,23 +1,13 @@
-const db = require("./db");
-
-const User = db.sequelize.define("users", {
-  username: { 
-    type: db.Sequelize.TEXT ,
-    allowNull: false,
-    unique: true
-  },
-  password: {
-    type: db.Sequelize.TEXT ,
-    allowNull: false
-  },
-  authLevel: { 
-    type: db.Sequelize.INTEGER ,
-    allowNull: false
-  },
-  name: {
-    type: db.Sequelize.TEXT ,
-    allowNull: false
-  }
-});
-
-module.exports = User;
+'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define('user', {
+    name: DataTypes.STRING,
+    username: DataTypes.STRING,
+    password: DataTypes.STRING,
+    authLevel: DataTypes.INTEGER
+  }, {});
+  User.associate = function(models) {
+    User.hasMany(models.parcela);
+  };
+  return User;
+};

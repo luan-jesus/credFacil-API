@@ -22,4 +22,5 @@ app.use("/", authController);
 app.use("/", userController);
 
 /** Server deployment **/
-app.listen(process.env.PORT || 5000);
+app.listen(process.env.PORT || 5000, () => console.log(process.env.DATABASE_POSTGRESQL_URL));
+
