@@ -1,4 +1,7 @@
 'use strict';
+
+const Cliente = require('../Models').cliente;
+
 module.exports = {
   up: (queryInterface, Sequelize) => {
     return queryInterface.createTable('emprestimos', {
@@ -38,7 +41,13 @@ module.exports = {
         type: Sequelize.DATE
       },
       clienteId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'clientes',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       }
     });
   },

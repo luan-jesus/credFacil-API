@@ -35,7 +35,13 @@ module.exports = {
         type: Sequelize.DATE
       },
       emprestimoId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'emprestimos',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
       userId: {
         type: Sequelize.INTEGER

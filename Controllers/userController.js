@@ -127,7 +127,7 @@ router.post("/users", async (req, res) => {
           await User.create(
             {
               username: username.toLowerCase(),
-              password: password,
+              password: password.toLowerCase(),
               authLevel: authLevel,
               name: name,
             },
