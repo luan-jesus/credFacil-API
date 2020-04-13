@@ -155,7 +155,7 @@ router.post("/emprestimos", async (req, res) => {
         valorEmprestimo: valorEmprestimo,
         valorAReceber: valorAReceber,
         numParcelas: numParcelas,
-        dataInicio: dataInicio,
+        dataInicio: new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate()),
         status: -1,
         valorPago: 0,
         numParcelasPagas: 0,
@@ -175,7 +175,7 @@ router.post("/emprestimos", async (req, res) => {
           valorParcela: emprestimo.valorAReceber / emprestimo.numParcelas,
           cobrado: false,
           valorPago: 0,
-          dataParcela: dataParcela,
+          dataParcela: new Date(dataParcela.getFullYear(), dataParcela.getMonth(), dataParcela.getDate()),
           idUserRecebeu: null,
         },
         { transaction: transaction }
