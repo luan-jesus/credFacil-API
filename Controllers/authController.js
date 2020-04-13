@@ -14,9 +14,9 @@ var router = express.Router();
 router.post("/auth/login", async (req, res) => {
   var { username, password } = req.body;
   if (!username) {
-    res.status(400).send("Username is required!");
+    res.status(400).send({error: "Username is required!"});
   } else if (!password) {
-    res.status(400).send("Password is required!");
+    res.status(400).send({error: "Password is required!"});
   } else {
     try {
       await User.findOne({
@@ -25,8 +25,8 @@ router.post("/auth/login", async (req, res) => {
           password: password.toLowerCase(),
         },
       }).then((user) => {
-        if (user.length === 0) {
-          res.status(401).send();
+        if (!user) {
+          res.status(401).send({ error: "Credenciais inválidas"});
         } else {
           res.status(200).send({
             id: user.id,

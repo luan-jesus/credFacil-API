@@ -420,7 +420,7 @@
       emprestimoId: 3,
       parcelaNum: 7,
       status: 1,
-      valorParcela: 100,
+      valorParcela: 120,
       cobrado: 1,
       valorPago: 120,
       dataParcela: new Date("04/06/2020"),
@@ -429,52 +429,52 @@
     {
       emprestimoId: 3,
       parcelaNum: 8,
-      status: -1,
+      status: 1,
       valorParcela: 80,
-      cobrado: 0,
-      valorPago: 0,
+      cobrado: 1,
+      valorPago: 80,
       dataParcela: new Date("04/07/2020"),
-      userId: null
+      userId: 3
     },
     {
       emprestimoId: 3,
       parcelaNum: 9,
-      status: -1,
+      status: 1,
       valorParcela: 100,
-      cobrado: 0,
-      valorPago: 0,
+      cobrado: 1,
+      valorPago: 100,
       dataParcela: new Date("04/08/2020"),
-      userId: null
+      userId: 3
     },
     {
       emprestimoId: 3,
       parcelaNum: 10,
-      status: -1,
+      status: 1,
       valorParcela: 100,
-      cobrado: 0,
-      valorPago: 0,
+      cobrado: 1,
+      valorPago: 100,
       dataParcela: new Date("04/09/2020"),
-      userId: null
+      userId: 3
     },
     {
       emprestimoId: 3,
       parcelaNum: 11,
-      status: -1,
+      status: 1,
       valorParcela: 100,
-      cobrado: 0,
-      valorPago: 0,
+      cobrado: 1,
+      valorPago: 100,
       dataParcela: new Date("04/10/2020"),
-      userId: null
+      userId: 3
     },
     {
       emprestimoId: 3,
       parcelaNum: 12,
-      status: -1,
+      status: 1,
       valorParcela: 100,
-      cobrado: 0,
-      valorPago: 0,
+      cobrado: 1,
+      valorPago: 100,
       dataParcela: new Date("04/11/2020"),
-      userId: null
+      userId: 3
     },
     {
       emprestimoId: 3,

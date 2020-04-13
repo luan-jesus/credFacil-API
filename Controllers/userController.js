@@ -34,6 +34,9 @@ router.get("/users/motoboys", async (req, res) => {
       order: [
         ['name', 'ASC'],
       ],
+      where: {
+        authLevel: 1
+      },
       include: [{
         attributes: [],
         model: Parcela,
@@ -120,7 +123,7 @@ router.post("/users", async (req, res) => {
       res.status(400).send("Usuário ja existe.");
     } else {
       try {
-        await db.sequelize.transaction(async (t) => {
+        await sequelize.transaction(async (t) => {
           await User.create(
             {
               username: username.toLowerCase(),
@@ -149,7 +152,7 @@ router.put("/users", async (req, res) => {
   var {id, password, name, authLevel} = req.body;
   if (id && password && name && authLevel) {
     try {
-      await db.sequelize.transaction(async (t) => {
+      await sequelize.transaction(async (t) => {
         await User.update(
           {
             password: password,
@@ -175,7 +178,7 @@ router.put("/users", async (req, res) => {
 /** Delete Customer **/
 router.delete("/users/:id", async (req, res) => {
   try {
-    await db.sequelize.transaction(async (t) => {
+    await sequelize.transaction(async (t) => {
       let UserToDelete = await User.findOne({
         where: { id: req.params.id },
       }).catch((e) => {

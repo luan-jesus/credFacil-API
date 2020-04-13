@@ -11,7 +11,6 @@ const {Op} = require("sequelize");
 
 var router = express.Router();
 
-const dia = 24 * 60 * 60 * 1000;
 
 /*
  * GET
@@ -75,13 +74,14 @@ router.get("/emprestimos/historico", async (req, res) => {
   }
 });
 
+/** Apenas 1 emprestimo */
 router.get("/emprestimos/:idEmprestimo", async (req, res) => {
   const { idEmprestimo } = req.params;
 
   try{
-    await Emprestimo.findAll({
+    await Emprestimo.findOne({
       attributes: [
-        'cliente.name',
+        'id',
         'valorEmprestimo',
         'valorEmprestimo',
         'valorAReceber',
@@ -110,10 +110,12 @@ router.get("/emprestimos/:idEmprestimo", async (req, res) => {
             'dataParcela'
           ],
           model: Parcela,
+          order: [["parcelaNum", "ASC"]],
+          separate: true,
           include: [{
             attributes: ['name'],
             model: User,
-            required: false
+            required: false,
           }]
         }
       ]
@@ -180,8 +182,8 @@ router.post("/emprestimos", async (req, res) => {
       );
 
       do {
-        dataParcela = new Date(dataParcela.getTime() + dia);
-      } while (dataParcela.getDay() == 6);
+        dataParcela = new Date(dataParcela.getTime() + 86400000);
+      } while (dataParcela.getDay() == 0);
     }
 
     await transaction.commit();
