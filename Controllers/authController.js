@@ -14,9 +14,9 @@ var router = express.Router();
 router.post("/auth/login", async (req, res) => {
   var { username, password } = req.body;
   if (!username) {
-    res.status(400).send({error: "Username is required!"});
+    res.status(400).send({error: "Usuário é obrigatório!"});
   } else if (!password) {
-    res.status(400).send({error: "Password is required!"});
+    res.status(400).send({error: "Senha é obrigatório!"});
   } else {
     try {
       await User.findOne({
