@@ -155,7 +155,7 @@ router.post("/emprestimos", async (req, res) => {
         valorEmprestimo: valorEmprestimo,
         valorAReceber: valorAReceber,
         numParcelas: numParcelas,
-        dataInicio: new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate()),
+        dataInicio: dataInicio,
         status: -1,
         valorPago: 0,
         numParcelasPagas: 0,
