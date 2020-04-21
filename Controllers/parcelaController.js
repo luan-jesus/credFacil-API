@@ -7,6 +7,7 @@ const Parcela = require("../Models").parcela;
 const Cliente = require("../Models").cliente;
 const Emprestimo = require("../Models").emprestimo;
 const User = require("../Models").user;
+const HistoMotoboy = require("../Models").histomotoboy;
 const sequelize = require("../Models").sequelize;
 
 var router = express.Router();
@@ -96,8 +97,8 @@ router.post("/parcelas/:parcelaId/receber", async (req, res) => {
 
   var parcelaAReceber = await Parcela.findOne({
     where: {
-      id: parcelaId,
-    },
+      id: parcelaId
+    }
   })
 
   if (!parcelaAReceber) {
@@ -120,7 +121,42 @@ router.post("/parcelas/:parcelaId/receber", async (req, res) => {
     await RecalcParcelas(emprestimoId);
     await sleep(1000);
     await RecalcEmprestimo(emprestimoId);
+
+    await HistoMotoboy.create({
+      userId: userId,
+      data: new Date(),
+      valor: valorPago,
+      parcelanum: parcelaAReceber.parcelaNum,
+      emprestimoId: emprestimoId
+    });
+
     res.status(200).send()
+  }
+});
+
+/** Delete Parcela */
+router.delete("/parcelas/:parcelaId" , async (req, res) => {
+  const { parcelaId } = req.params;
+
+  var parcelaADeletar = await Parcela.findOne({
+    where: {
+      id: parcelaId
+    }
+  });
+
+  if (!parcelaADeletar) {
+    res.status(404).send({error: "Parcela não encontrada"});
+  } else {
+    try{
+      await parcelaADeletar.destroy();
+      await RecalcParcelas(parcelaADeletar.emprestimoId);
+      await sleep(1000);
+      await RecalcEmprestimo(parcelaADeletar.emprestimoId);
+      res.status(200).send()
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+    
   }
 });
 

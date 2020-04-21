@@ -207,7 +207,7 @@ router.delete("/emprestimos/:idEmpestimo", async (req, res) => {
         },
       })
       if (!EmprestimoToDelete) {
-        res.status(404).send("Record not found");
+        res.status(404).send({error: "Registro não encontrado"});
       } else {
         await EmprestimoToDelete.destroy({ transaction: t }).then(() => {
           res.status(200).send();

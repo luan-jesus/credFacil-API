@@ -26,7 +26,7 @@ router.post("/auth/login", async (req, res) => {
         },
       }).then((user) => {
         if (!user) {
-          res.status(401).send({ error: "Credenciais inválidas"});
+          res.status(401).send({ error: "Credenciais inválidas" });
         } else {
           res.status(200).send({
             id: user.id,

@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   User.associate = function(models) {
     User.hasMany(models.parcela);
+    User.hasMany(models.histomotoboy);
   };
   return User;
 };

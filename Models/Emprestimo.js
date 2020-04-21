@@ -11,7 +11,9 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   Emprestimo.associate = function(models) {
     Emprestimo.belongsTo(models.cliente);
+    Emprestimo.belongsTo(models.histomotoboy);
     Emprestimo.hasMany(models.parcela);
+    Emprestimo.hasMany(models.histomotoboy);
   };
   return Emprestimo;
 };

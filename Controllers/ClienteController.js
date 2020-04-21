@@ -68,6 +68,8 @@ router.post("/clientes", async (req, res) => {
         await Cliente.create(
           {
             name: body.name,
+            username: body.username,
+            password: body.password
           },
           { transaction: t }
         ).then(() => res.status(201).send());

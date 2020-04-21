@@ -5,7 +5,9 @@ const { Op } = require('sequelize')
 /** Internal Modules **/
 const User = require("../Models").user;
 const Parcela = require("../Models").parcela;
-const Emprestimo = require("../Models").Emprestimo;
+const Cliente = require("../Models").cliente;
+const Emprestimo = require("../Models").emprestimo;
+const HistoMotoboy = require("../Models").histomotoboy;
 const sequelize = require("../Models").sequelize;
 // const Parcela = require("../Models/--Parcela");
 // const db = require("../Models/db");
@@ -37,14 +39,16 @@ router.get("/users/motoboys", async (req, res) => {
       where: {
         authLevel: 1
       },
-      include: [{
-        attributes: [],
-        model: Parcela,
-        required: false,
-        where: {
-          dataParcela: today()
+      include: [
+        {
+          attributes: [],
+          model: Parcela,
+          required: false,
+          where: {
+            dataParcela: today()
+          }
         }
-      }],
+      ],
       group: ['user.id']
     }).then(users => {
       res.json(users);
@@ -67,7 +71,7 @@ router.get("/users", async (req, res) => {
 /** Fetch user by id **/
 router.get("/users/:id", async (req, res) => {
   try {
-    await User.findOne({
+    var users = await User.findOne({
       attributes: [
         'id', 
         'name', 
@@ -82,18 +86,42 @@ router.get("/users/:id", async (req, res) => {
       order: [
         ['name', 'ASC'],
       ],
-      include: [{
-        attributes: [],
-        model: Parcela,
-        required: false,
-        where: {
-          dataParcela: today()
+      include: [
+        {
+          attributes: [],
+          model: Parcela,
+          required: false,
+          where: {
+            dataParcela: today()
+          }
         }
-      }],
+      ],
       group: ['user.id']
-    }).then(users => {
-      res.json(users);
     })
+    var user = users.dataValues;
+
+    var historico = await HistoMotoboy.findAll({
+      attributes: ['data', 'valor', 'parcelanum', 'emprestimo.cliente.name'],
+      order: [['data', 'DESC']],
+      where: {
+        userId: req.params.id
+      },
+      include: [{
+        attributes: ['id'],
+        model: Emprestimo,
+        include: [{
+          attributes: ['name'],
+          model: Cliente
+        }]
+      }]
+    })
+
+    var historicos = historico.map(val => val.dataValues);
+
+    user.historico = historicos;
+
+    users.historico = historico;
+    res.send(user)
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
