@@ -212,9 +212,28 @@ async function RecalcParcelas(idEmprestimo) {
               // Define status como 1 (pago) e adiciona o resíduo na proxima parcela
               parcela.status = 1;
               parcela.valorParcela = parcela.valorPago;
-              parcelas[i + 1].status = -1;
-              var oldValue = parseFloat(parcelas[i + 1].valorParcela)
-              parcelas[i + 1].valorParcela = oldValue + residuo;
+              if (parseFloat(parcelas[i + 1].valorParcela) + residuo <= 0) {
+                // pagou a mais do que o valor da proxima parcela
+                var ultimoIndice = parcelas.length - 1;
+                var restoDoResiduo = residuo;
+                do {
+                  if (parseFloat(parcelas[ultimoIndice].valorParcela) + restoDoResiduo <= 0) {
+                    restoDoResiduo = restoDoResiduo + parseFloat(parcelas[ultimoIndice].valorParcela);
+                    parcelas[ultimoIndice].valorParcela = 0;
+                    parcelas[ultimoIndice].status = -1;
+                  } else {
+                    parcelas[ultimoIndice].status = -1;
+                    var oldValue = parseFloat(parcelas[ultimoIndice].valorParcela)
+                    parcelas[ultimoIndice].valorParcela = oldValue + restoDoResiduo;
+                    restoDoResiduo = restoDoResiduo + oldValue;
+                  }
+                  ultimoIndice--;
+                } while (restoDoResiduo <= 0);
+              } else {
+                parcelas[i + 1].status = -1;
+                var oldValue = parseFloat(parcelas[i + 1].valorParcela)
+                parcelas[i + 1].valorParcela = oldValue + residuo;
+              }
             }
           }
         } else {
@@ -254,6 +273,14 @@ async function RecalcParcelas(idEmprestimo) {
 
 async function RecalcEmprestimo(idEmprestimo) {
   try{
+    await Parcela.destroy({
+      where: {
+        emprestimoId: idEmprestimo,
+        status: -1,
+        valorParcela: 0
+      }
+    });
+
     var emprestimo = await Emprestimo.findOne({
       attributes: [
         "id",
