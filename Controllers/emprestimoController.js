@@ -15,6 +15,52 @@ var router = express.Router();
  * GET
  */
 
+/** Quantidade de emprestimos em solicitação (status 5) **/
+router.get("/emprestimos/solicitacao/count", async (req, res) => {
+  try {
+    var solicitacoes = await Emprestimo.count({
+      where: {
+        status: 5
+      }
+    })
+    res.send({solicitacoes});
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
+
+
+/** Todos os emprestimos solicitados **/
+router.get("/emprestimos/solicitacao", async (req, res) => {
+  try {
+    await Emprestimo.findAll({
+      attributes: [
+        "id",
+        "valorEmprestimo",
+        "valorEmprestimo",
+        "valorAReceber",
+        "valorPago",
+        "numParcelas",
+        "numParcelasPagas",
+        "dataInicio",
+        "status",
+      ],
+      where: {
+        status: 5,
+      },
+      include: [
+        {
+          attributes: ["id","name"],
+          model: Cliente,
+        },
+      ],
+    }).then((ev) => {
+      res.send(ev);
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
 /** Todos os emprestimos em andamento **/
 router.get("/emprestimos/andamento", async (req, res) => {
   try {
@@ -62,7 +108,40 @@ router.get("/emprestimos/historico", async (req, res) => {
         "dataInicio",
         "status",
       ],
-      where: { status: { [Op.not]: -1 } },
+      where: { status: { [Op.notIn]:[-1,5] } },
+      include: [
+        {
+          attributes: ["name"],
+          model: Cliente,
+        },
+      ],
+    }).then((ev) => {
+      res.send(ev);
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
+
+/** Todos os emprestimos de um cliente **/
+router.get("/emprestimos/cliente/:idCliente", async (req, res) => {
+  try {
+    await Emprestimo.findAll({
+      attributes: [
+        "id",
+        "valorEmprestimo",
+        "valorEmprestimo",
+        "valorAReceber",
+        "valorPago",
+        "numParcelas",
+        "numParcelasPagas",
+        "dataInicio",
+        "status",
+      ],
+      where: {
+        status: -1,
+        clienteId: req.params.idCliente
+      },
       include: [
         {
           attributes: ["name"],
