@@ -24,7 +24,7 @@ router.get("/clientes", async (req, res) => {
 router.get("/clientes/:id", async (req, res) => {
   try {
     await Cliente.findOne({
-      attributes: ["id", "name"],
+      attributes: ["id", "name", "username", "password"],
       where: {
         id: req.params.id,
       },
@@ -85,13 +85,21 @@ router.post("/clientes", async (req, res) => {
  * @Param name
  * **/
 router.put("/clientes", async (req, res) => {
-  var { id, name } = req.body;
+  var { id, name, username, password } = req.body;
+  if (!username) {
+    username = ""
+  }
+  if (!password) {
+    password = ""
+  }
   if (id && name) {
     try {
       await sequelize.transaction(async (t) => {
         await Cliente.update(
           {
             name: name,
+            username: username,
+            password: password
           },
           {
             where: { id: id },

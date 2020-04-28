@@ -1,6 +1,6 @@
 /** External Modules **/
 var express = require("express");
-const { Op } = require('sequelize')
+const { Op } = require("sequelize");
 
 /** Internal Modules **/
 const User = require("../Models").user;
@@ -28,16 +28,17 @@ router.get("/users/motoboys", async (req, res) => {
   try {
     await User.findAll({
       attributes: [
-        'id', 
-        'name', 
-        'username',
-        [sequelize.fn('sum', sequelize.col('parcelas.valorPago')), 'receivedToday']
+        "id",
+        "name",
+        "username",
+        [
+          sequelize.fn("sum", sequelize.col("parcelas.valorPago")),
+          "receivedToday",
+        ],
       ],
-      order: [
-        ['name', 'ASC'],
-      ],
+      order: [["name", "ASC"]],
       where: {
-        authLevel: 1
+        authLevel: 1,
       },
       include: [
         {
@@ -45,14 +46,14 @@ router.get("/users/motoboys", async (req, res) => {
           model: Parcela,
           required: false,
           where: {
-            dataParcela: today()
-          }
-        }
+            dataParcela: today(),
+          },
+        },
       ],
-      group: ['user.id']
-    }).then(users => {
+      group: ["user.id"],
+    }).then((users) => {
       res.json(users);
-    })
+    });
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
@@ -62,8 +63,7 @@ router.get("/users", async (req, res) => {
   try {
     await User.findAll({
       attributes: ["id", "username", "authLevel", "name"],
-    })
-      .then((ev) => res.json(ev))
+    }).then((ev) => res.json(ev));
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
@@ -73,57 +73,116 @@ router.get("/users/:id", async (req, res) => {
   try {
     var users = await User.findOne({
       attributes: [
-        'id', 
-        'name', 
-        'username',
-        'password',
-        'authLevel',
-        [sequelize.fn('sum', sequelize.col('parcelas.valorPago')), 'receivedToday']
+        "id",
+        "name",
+        "username",
+        "password",
+        "authLevel",
+        [
+          sequelize.fn("sum", sequelize.col("parcelas.valorPago")),
+          "receivedToday",
+        ],
       ],
       where: {
-        id: req.params.id
+        id: req.params.id,
       },
-      order: [
-        ['name', 'ASC'],
-      ],
+      order: [["name", "ASC"]],
       include: [
         {
           attributes: [],
           model: Parcela,
           required: false,
           where: {
-            dataParcela: today()
-          }
-        }
+            dataParcela: today(),
+          },
+        },
       ],
-      group: ['user.id']
-    })
+      group: ["user.id"],
+    });
     var user = users.dataValues;
 
     var historico = await HistoMotoboy.findAll({
-      attributes: ['data', 'valor', 'parcelanum', 'emprestimo.cliente.name'],
-      order: [['data', 'DESC']],
+      attributes: [
+        "userId",
+        [sequelize.literal('DATE("data")'), "date"],
+        [sequelize.fn("sum", sequelize.col("valor")), "valor"],
+      ],
+      group: [[sequelize.literal('DATE("data")'), "date"], "userId"],
       where: {
-        userId: req.params.id
+        userId: req.params.id,
       },
-      include: [{
-        attributes: ['id'],
-        model: Emprestimo,
-        include: [{
-          attributes: ['name'],
-          model: Cliente
-        }]
-      }]
-    })
+      order: [[sequelize.literal('DATE("data")'), 'DESC']]
+    });
 
-    var historicos = historico.map(val => val.dataValues);
-
+    var historicos = historico.map((val) => val.dataValues);
     user.historico = historicos;
 
-    users.historico = historico;
-    res.send(user)
+    res.send(user);
   } catch (error) {
     res.status(500).json({ error: error.toString() });
+  }
+});
+
+/** Fetch motoboy by id **/
+router.post("/motoboy/:id", async (req, res) => {
+  const { dataParcela } = req.body;
+  if (!dataParcela) {
+    res.status(400).send({ error: "dataParcela é obrigatório" });
+  } else {
+    try {
+      var users = await User.findOne({
+        attributes: [
+          "id",
+          "name",
+          [
+            sequelize.fn("sum", sequelize.col("histomotoboys.valor")),
+            "receivedToday",
+          ],
+        ],
+        where: {
+          id: req.params.id,
+        },
+        order: [["name", "ASC"]],
+        include: [
+          {
+            attributes: [],
+            model: HistoMotoboy,
+            required: false,
+            where: {
+              [Op.and]: sequelize.literal("DATE(\"data\") = '" + dataParcela + "'"),
+            },
+          },
+        ],
+        group: ["user.id"],
+      });
+      var user = users.dataValues;
+
+      var historico = await HistoMotoboy.findAll({
+        attributes: ['data', 'valor', 'parcelanum', 'emprestimo.cliente.name'],
+        order: [['data', 'DESC']],
+        where: {
+          userId: req.params.id,
+          [Op.and]: sequelize.literal("DATE(\"data\") = '" + dataParcela + "'"),
+        },
+        include: [{
+          attributes: ['id'],
+          model: Emprestimo,
+          include: [{
+            attributes: ['name'],
+            model: Cliente
+          }]
+        }]
+      })
+
+      var historicos = historico.map((val) => val.dataValues);
+
+      user.historico = historicos;
+      user.dataParcela = dataParcela;
+
+      res.send(user);
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
   }
 });
 
@@ -138,16 +197,16 @@ router.get("/users/:id", async (req, res) => {
  * @Param name
  * **/
 router.post("/users", async (req, res) => {
-  var {username, password, name, authLevel} = req.body;
+  var { username, password, name, authLevel } = req.body;
   if (!username || !password || !name || !authLevel) {
     res.status(400).send("Body is missing required parameters.");
   } else {
     const findUser = await User.findOne({
       where: {
-        username: username
-      }
+        username: username,
+      },
     });
-    if (findUser){
+    if (findUser) {
       res.status(400).send("Usuário ja existe.");
     } else {
       try {
@@ -177,7 +236,7 @@ router.post("/users", async (req, res) => {
  * @Param name
  * **/
 router.put("/users", async (req, res) => {
-  var {id, password, name, authLevel} = req.body;
+  var { id, password, name, authLevel } = req.body;
   if (id && password && name && authLevel) {
     try {
       await sequelize.transaction(async (t) => {
@@ -185,7 +244,7 @@ router.put("/users", async (req, res) => {
           {
             password: password,
             name: name,
-            authLevel: authLevel
+            authLevel: authLevel,
           },
           {
             where: { id: id },
