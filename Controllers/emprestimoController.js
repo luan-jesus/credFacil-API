@@ -29,7 +29,6 @@ router.get("/emprestimos/solicitacao/count", async (req, res) => {
   }
 });
 
-
 /** Todos os emprestimos solicitados **/
 router.get("/emprestimos/solicitacao", async (req, res) => {
   try {
@@ -221,6 +220,47 @@ router.get("/emprestimos/:idEmprestimo", async (req, res) => {
  * @Param dataInicio
  */
 
+
+
+/** Solicitar emprestimo **/
+router.post("/emprestimos/solicitar", async (req, res) => {
+  var {
+    idCliente,
+    valorEmprestimo,
+  } = req.body;
+
+  if (
+    idCliente &&
+    valorEmprestimo
+  ) {
+    
+    try {
+      var emprestimoSolicitado = await Emprestimo.findOne({
+        where: {
+          clienteId: idCliente,
+          status: 5
+        }
+      });
+
+      if (emprestimoSolicitado) {
+        await emprestimoSolicitado.destroy();
+      }
+      
+      await Emprestimo.create({
+        clienteId: idCliente,
+        valorEmprestimo: valorEmprestimo,
+        dataInicio: new Date(),
+        status: 5
+      });
+      
+      res.status(200).send();
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+  } else {
+    res.status(400).json({ error: "Missing required params" });
+  }
+});
 /** Cadastrar novo emprestimo **/
 router.post("/emprestimos", async (req, res) => {
   var {
