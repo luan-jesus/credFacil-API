@@ -138,7 +138,6 @@ router.get("/emprestimos/cliente/:idCliente", async (req, res) => {
         "status",
       ],
       where: {
-        status: -1,
         clienteId: req.params.idCliente
       },
       include: [
