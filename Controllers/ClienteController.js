@@ -68,8 +68,8 @@ router.post("/clientes", async (req, res) => {
         await Cliente.create(
           {
             name: body.name,
-            username: body.username,
-            password: body.password
+            username: body.username.toLowerCase(),
+            password: body.password.toLowerCase()
           },
           { transaction: t }
         ).then(() => res.status(201).send());
@@ -98,8 +98,8 @@ router.put("/clientes", async (req, res) => {
         await Cliente.update(
           {
             name: name,
-            username: username,
-            password: password
+            username: username.toLowerCase(),
+            password: password.toLowerCase()
           },
           {
             where: { id: id },
