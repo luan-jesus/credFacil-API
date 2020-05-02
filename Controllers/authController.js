@@ -11,6 +11,13 @@ var router = express.Router();
  * GET
  */
 
+router.get("/getDateTime", async (req, res) => {
+  const x = new Date();
+  var y = new Date(x.getFullYear(), x.getMonth(), x.getDate())
+  res.send(y.toString());
+});
+
+
 /** Login **/
 router.post("/auth/login", async (req, res) => {
   var { username, password } = req.body;

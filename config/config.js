@@ -1,23 +1,26 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 module.exports = {
   development: {
-    username: "postgres",
-    password: "91391211",
-    database: "credfacil-des",
-    host: "34.95.199.244",
+    username: process.env.CONECTION_DEV_USERNAME,
+    password: process.env.CONECTION_DEV_PASSWORD,
+    database: process.env.CONECTION_DEV_DATABASE,
+    host: process.env.CONECTION_DEV_HOST,
     dialect: "postgres"
   },
   test: {
-    username: "postgres",
-    password: "91391211",
-    database: "credfacil-des",
-    host: "34.95.199.244",
+    username: process.env.CONECTION_DEV_USERNAME,
+    password: process.env.CONECTION_DEV_PASSWORD,
+    database: process.env.CONECTION_DEV_DATABASE,
+    host: process.env.CONECTION_DEV_HOST,
     dialect: "postgres"
   },
   production: {
-    username: "postgres",
-    password: "91391211",
-    database: "credfacil-prd",
-    host: "34.95.199.244",
+    username: process.env.CONECTION_PRD_USERNAME,
+    password: process.env.CONECTION_PRD_PASSWORD,
+    database: process.env.CONECTION_PRD_DATABASE,
+    host: process.env.CONECTION_PRD_HOST,
     dialect: "postgres"
   }
 };

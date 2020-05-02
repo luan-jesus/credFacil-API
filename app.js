@@ -1,5 +1,6 @@
 /** External Modules **/
 const express = require("express");
+const dotenv = require('dotenv');
 const cors = require('cors');
 
 /** Internal modules **/
@@ -8,6 +9,8 @@ const clienteController = require("./Controllers/ClienteController");
 const emprestimoController = require("./Controllers/emprestimoController");
 const authController = require("./Controllers/authController");
 const userController = require("./Controllers/userController");
+
+dotenv.config();
 
 /** Express setup **/
 const app = express();
@@ -22,5 +25,5 @@ app.use("/", authController);
 app.use("/", userController);
 
 /** Server deployment **/
-app.listen(process.env.PORT || 5000, () => console.log(process.env.DATABASE_POSTGRESQL_URL));
+app.listen(process.env.PORT, () => console.log(`Server is running in ${process.env.NODE_ENV} environment, on PORT ${process.env.PORT}`));
 
