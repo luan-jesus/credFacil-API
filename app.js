@@ -25,5 +25,5 @@ app.use("/", authController);
 app.use("/", userController);
 
 /** Server deployment **/
-app.listen(process.env.PORT, () => console.log(`Server is running in ${process.env.NODE_ENV} environment, on PORT ${process.env.PORT}`));
+app.listen(process.env.PORT || 5000, () => console.log(`Server is running in ${process.env.NODE_ENV} environment, on PORT ${process.env.PORT}`));
 
