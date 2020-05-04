@@ -24,12 +24,28 @@ router.get("/parcelas/today", async (req, res) => {
     await Parcela.findAll({
       attributes: ["id", "parcelaNum", "valorParcela", "dataParcela"],
       where: {
-        dataParcela: new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate()
-        ),
-        status: -1,
+        [Op.or]: [
+          {
+            dataParcela: new Date(
+              today.getFullYear(),
+              today.getMonth(),
+              today.getDate()
+            ),
+            status: -1
+          },
+          {
+            dataParcela: {
+              [Op.lte]: new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate()
+              )
+            },
+            semanal: true,
+            status: -1
+          }
+        ]
+        
       },
       include: [
         {

@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     valorParcela: DataTypes.DECIMAL,
     cobrado: DataTypes.BOOLEAN,
     valorPago: DataTypes.DECIMAL,
-    dataParcela: DataTypes.DATE
+    dataParcela: DataTypes.DATE,
+    semanal: DataTypes.BOOLEAN
   }, {});
   Parcela.associate = function(models) {
     Parcela.belongsTo(models.emprestimo);

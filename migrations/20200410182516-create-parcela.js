@@ -45,6 +45,10 @@ module.exports = {
       },
       userId: {
         type: Sequelize.INTEGER
+      },
+      semanal: {
+        allowNull: true,
+        type: Sequelize.BOOLEAN
       }
     });
   },

@@ -288,6 +288,12 @@ router.post("/emprestimos", async (req, res) => {
     }
   }
 
+  var semanal = false;
+
+  if (frequencia  != 1) {
+    semanal = true
+  }
+
   if (
     idCliente &&
     valorEmprestimo &&
@@ -308,7 +314,7 @@ router.post("/emprestimos", async (req, res) => {
           dataInicio: dataInicio,
           status: -1,
           valorPago: 0,
-          numParcelasPagas: 0,
+          numParcelasPagas: 0
         },
         { transaction: transaction }
       ).then((ev) => {
@@ -342,6 +348,7 @@ router.post("/emprestimos", async (req, res) => {
               dataParcela.getDate()
             ),
             idUserRecebeu: null,
+            semanal: semanal
           },
           { transaction: transaction }
         );
