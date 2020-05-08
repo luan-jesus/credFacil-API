@@ -12,6 +12,11 @@ const sequelize = require("../Models").sequelize;
 
 var router = express.Router();
 
+function today() {
+  let x = new Date();
+  return new Date(x.getFullYear(), x.getMonth(), x.getDate());
+}
+
 /*
  * GET
  */
@@ -140,7 +145,7 @@ router.post("/parcelas/:parcelaId/receber", async (req, res) => {
 
     await HistoMotoboy.create({
       userId: userId,
-      data: new Date(),
+      data: today(),
       valor: valorPago,
       parcelanum: parcelaAReceber.parcelaNum,
       emprestimoId: emprestimoId
