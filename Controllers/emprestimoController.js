@@ -7,23 +7,92 @@ const Parcela = require("../Models").parcela;
 const Cliente = require("../Models").cliente;
 const sequelize = require("../Models").sequelize;
 const User = require("../Models").user;
+const HistoMotoboy = require("../Models").histomotoboy;
 const { Op } = require("sequelize");
 
 var router = express.Router();
 
+function today() {
+  let x = new Date();
+  return new Date(x.getFullYear(), x.getMonth(), x.getDate());
+}
+
 /*
  * GET
  */
+
+/** Todas todos os emprestimos a receber **/
+router.get("/emprestimos/receber/:userId", async (req, res) => {
+  const { userId } = req.params;
+  var today = new Date();
+
+  try {
+    const emprestimos = await Emprestimo.findAll({
+      attributes: [
+        "id",
+        [
+          sequelize.literal(
+            'sum("parcelas"."valorParcela") - sum("parcelas"."valorPago")'
+          ),
+          "valorReceber",
+        ],
+      ],
+      where: {
+        status: -1,
+      },
+      group: ["emprestimo.id", "cliente.id"],
+      include: [
+        {
+          attributes: ["name"],
+          model: Cliente,
+        },
+        {
+          required: false,
+          attributes: [],
+          model: Parcela,
+          where: {
+            dataParcela: {
+              [Op.lte]: new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate()
+              ),
+            },
+            status: -1,
+          },
+        },
+      ],
+      order: [[sequelize.literal('"valorReceber"'), 'ASC']]
+    });
+
+    const receivedToday = await HistoMotoboy.findAll({
+      attributes: [
+        [sequelize.fn("sum", sequelize.col("valor")), "receivedToday"],
+      ],
+      where: {
+        userId,
+        data: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      },
+    });
+
+    res.send({
+      receivedToday: receivedToday[0].dataValues.receivedToday,
+      emprestimos,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
 
 /** Quantidade de emprestimos em solicitação (status 5) **/
 router.get("/emprestimos/solicitacao/count", async (req, res) => {
   try {
     var solicitacoes = await Emprestimo.count({
       where: {
-        status: 5
-      }
-    })
-    res.send({solicitacoes});
+        status: 5,
+      },
+    });
+    res.send({ solicitacoes });
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
@@ -49,7 +118,7 @@ router.get("/emprestimos/solicitacao", async (req, res) => {
       },
       include: [
         {
-          attributes: ["id","name"],
+          attributes: ["id", "name"],
           model: Cliente,
         },
       ],
@@ -107,7 +176,7 @@ router.get("/emprestimos/historico", async (req, res) => {
         "dataInicio",
         "status",
       ],
-      where: { status: { [Op.notIn]:[-1,5] } },
+      where: { status: { [Op.notIn]: [-1, 5] } },
       include: [
         {
           attributes: ["name"],
@@ -138,7 +207,7 @@ router.get("/emprestimos/cliente/:idCliente", async (req, res) => {
         "status",
       ],
       where: {
-        clienteId: req.params.idCliente
+        clienteId: req.params.idCliente,
       },
       include: [
         {
@@ -158,8 +227,40 @@ router.get("/emprestimos/cliente/:idCliente", async (req, res) => {
 router.get("/emprestimos/:idEmprestimo", async (req, res) => {
   const { idEmprestimo } = req.params;
 
+  let x = new Date();
+  let today = new Date(x.getFullYear(), x.getMonth(), x.getDate());
   try {
-    await Emprestimo.findOne({
+    const numParcelasAReceber = await Parcela.count({
+      where: {
+        emprestimoId: idEmprestimo,
+        [Op.and]: {
+          status: -1,
+          dataParcela: {
+            [Op.lte]: today,
+          },
+        },
+      },
+    });
+
+    const qtdAReceber = await Parcela.findAll({
+      attributes: [
+        [
+          sequelize.literal('sum("valorParcela") - sum("valorPago")'),
+          "qtdAReceber",
+        ],
+      ],
+      where: {
+        emprestimoId: idEmprestimo,
+        [Op.and]: {
+          status: -1,
+          dataParcela: {
+            [Op.lte]: today,
+          },
+        },
+      },
+    });
+
+    const resEmp = await Emprestimo.findOne({
       attributes: [
         "id",
         "valorEmprestimo",
@@ -201,9 +302,12 @@ router.get("/emprestimos/:idEmprestimo", async (req, res) => {
           ],
         },
       ],
-    }).then((ev) => {
-      res.send(ev);
     });
+
+    let response = resEmp.dataValues;
+    response.numParcelasAReceber = numParcelasAReceber;
+    response.qtdAReceber = qtdAReceber[0].dataValues.qtdAReceber;
+    res.send(response);
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
@@ -219,39 +323,30 @@ router.get("/emprestimos/:idEmprestimo", async (req, res) => {
  * @Param dataInicio
  */
 
-
-
 /** Solicitar emprestimo **/
 router.post("/emprestimos/solicitar", async (req, res) => {
-  var {
-    idCliente,
-    valorEmprestimo,
-  } = req.body;
+  var { idCliente, valorEmprestimo } = req.body;
 
-  if (
-    idCliente &&
-    valorEmprestimo
-  ) {
-    
+  if (idCliente && valorEmprestimo) {
     try {
       var emprestimoSolicitado = await Emprestimo.findOne({
         where: {
           clienteId: idCliente,
-          status: 5
-        }
+          status: 5,
+        },
       });
 
       if (emprestimoSolicitado) {
         await emprestimoSolicitado.destroy();
       }
-      
+
       await Emprestimo.create({
         clienteId: idCliente,
         valorEmprestimo: valorEmprestimo,
         dataInicio: new Date(),
-        status: 5
+        status: 5,
       });
-      
+
       res.status(200).send();
     } catch (error) {
       res.status(500).json({ error: error.toString() });
@@ -260,6 +355,153 @@ router.post("/emprestimos/solicitar", async (req, res) => {
     res.status(400).json({ error: "Missing required params" });
   }
 });
+
+/** Pagar emprestimo **/
+router.post("/emprestimos/:idEmprestimo/pagar", async (req, res) => {
+  const { idEmprestimo } = req.params;
+  const { valorPago, userId } = req.body;
+
+  if (!valorPago)
+    return res.status(400).send({ error: "O valor pago é obrigatório." });
+
+  if (!userId)
+    return res.status(400).send({ error: "O usuário é obrigatório." });
+
+  try {
+    const parcelasReceber = await Parcela.findAll({
+      where: {
+        emprestimoId: idEmprestimo,
+      },
+      order: ["parcelaNum"],
+    });
+
+    var residuo = valorPago;
+
+    for (var i = 0; i < parcelasReceber.length; i++) {
+      var parcela = parcelasReceber[i];
+
+      if (residuo <= 0) break;
+
+      if (parcela.status === -1) {
+        console.log(`Atualizando parcela ${parcela.parcelaNum}, residuo ${residuo} `);
+
+        var valorPagar = parseFloat(parcela.valorParcela) - parseFloat(parcela.valorPago);
+        var valorPagoParcela = residuo < valorPagar ? residuo : valorPagar;
+        var residuoParcela = parseFloat(parcela.valorParcela) - (valorPagoParcela + parseFloat(parcela.valorPago));
+
+        await Parcela.update(
+          {
+            valorPago: parseFloat(parcela.valorPago) + valorPagoParcela,
+            status: 1,
+            cobrado: true,
+            userId,
+          },
+          {
+            where: { id: parcela.id },
+          }
+        );
+
+        await HistoMotoboy.create({
+          userId,
+          data: today(),
+          valor: valorPagoParcela,
+          parcelanum: parcela.parcelaNum,
+          emprestimoId: parcela.emprestimoId,
+          pago: false
+        });
+
+        if (residuoParcela) {
+          var i = 1;
+          do {
+            var proxParcela = await Parcela.findOne({
+              where: {
+                emprestimoId: parcela.emprestimoId,
+                parcelaNum: parcela.parcelaNum + i,
+              },
+            });
+            i++;
+
+            if (proxParcela && proxParcela.status === -1) break;
+          } while (proxParcela);
+
+          if (proxParcela) {
+            await Parcela.update(
+              {
+                valorParcela:
+                  parseFloat(proxParcela.valorParcela) + residuoParcela,
+              },
+              {
+                where: {
+                  id: proxParcela.id,
+                },
+              }
+            );
+          } else {
+            console.log("Teve residuo e é a ultima parcela, definindo status da ultima como -1");
+
+            await Parcela.update(
+              {
+                status: -1
+              },
+              {
+                where: { id: parcela.id }
+              }
+            );
+          }
+        }
+        residuo -= valorPagar;
+      }
+    }
+
+    const valorPagoEmprestimo = await Parcela.findAll({
+      attributes: [
+        [sequelize.fn("sum", sequelize.col("valorPago")), "totalPago"],
+      ],
+      where: {
+        emprestimoId: idEmprestimo,
+      },
+    });
+
+    const numParcelasPagas = await Parcela.count({
+      where: {
+        emprestimoId: idEmprestimo,
+        status: 1,
+      },
+    });
+
+    const emprestimoParcela = await Emprestimo.findOne({
+      where: {
+        id: idEmprestimo,
+      },
+    });
+
+    var emprestimoStatus = -1;
+    if (
+      parseFloat(valorPagoEmprestimo[0].dataValues.totalPago) >=
+      parseFloat(emprestimoParcela.valorAReceber)
+    ) {
+      emprestimoStatus = 1;
+    }
+
+    await Emprestimo.update(
+      {
+        status: emprestimoStatus,
+        valorPago: parseFloat(valorPagoEmprestimo[0].dataValues.totalPago),
+        numParcelasPagas: numParcelasPagas,
+      },
+      {
+        where: {
+          id: emprestimoParcela.id,
+        },
+      }
+    );
+
+    res.send();
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
+
 /** Cadastrar novo emprestimo **/
 router.post("/emprestimos", async (req, res) => {
   var {
@@ -269,7 +511,7 @@ router.post("/emprestimos", async (req, res) => {
     numParcelas,
     dataInicio,
     frequencia,
-    diaSemana
+    diaSemana,
   } = req.body;
 
   if (!frequencia) {
@@ -285,13 +527,13 @@ router.post("/emprestimos", async (req, res) => {
       4: true,
       5: true,
       6: true,
-    }
+    };
   }
 
   var semanal = false;
 
-  if (frequencia  != 1) {
-    semanal = true
+  if (frequencia != 1) {
+    semanal = true;
   }
 
   if (
@@ -314,7 +556,7 @@ router.post("/emprestimos", async (req, res) => {
           dataInicio: dataInicio,
           status: -1,
           valorPago: 0,
-          numParcelasPagas: 0
+          numParcelasPagas: 0,
         },
         { transaction: transaction }
       ).then((ev) => {
@@ -323,7 +565,6 @@ router.post("/emprestimos", async (req, res) => {
 
       var dataParcela = new Date(dataInicio);
       for (var i = 1; i <= numParcelas; i++) {
-
         if (frequencia == 1) {
           if (dataParcela.getDay() == 0) {
             dataParcela = new Date(dataParcela.getTime() + 86400000);
@@ -348,7 +589,7 @@ router.post("/emprestimos", async (req, res) => {
               dataParcela.getDate()
             ),
             idUserRecebeu: null,
-            semanal: semanal
+            semanal: semanal,
           },
           { transaction: transaction }
         );
@@ -375,7 +616,7 @@ router.delete("/emprestimos/:idEmpestimo", async (req, res) => {
   try {
     await sequelize.transaction(async (t) => {
       let EmprestimoToDelete = await Emprestimo.findOne({
-        attributes: ['id'],
+        attributes: ["id"],
         where: {
           id: req.params.idEmpestimo,
         },

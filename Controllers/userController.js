@@ -32,7 +32,7 @@ router.get("/users/motoboys", async (req, res) => {
         "name",
         "username",
         [
-          sequelize.fn("sum", sequelize.col("parcelas.valorPago")),
+          sequelize.fn("sum", sequelize.col("histomotoboys.valor")),
           "receivedToday",
         ],
       ],
@@ -43,10 +43,10 @@ router.get("/users/motoboys", async (req, res) => {
       include: [
         {
           attributes: [],
-          model: Parcela,
+          model: HistoMotoboy,
           required: false,
           where: {
-            dataParcela: today(),
+            pago: { [Op.not]: true },
           },
         },
       ],
@@ -72,32 +72,58 @@ router.get("/users", async (req, res) => {
 router.get("/users/:id", async (req, res) => {
   try {
     var users = await User.findOne({
-      attributes: [
-        "id",
-        "name",
-        "username",
-        "password",
-        "authLevel",
-        [
-          sequelize.fn("sum", sequelize.col("parcelas.valorPago")),
-          "receivedToday",
-        ],
-      ],
+      attributes: ["id", "name", "username", "password", "authLevel"],
       where: {
         id: req.params.id,
       },
       order: [["name", "ASC"]],
-      include: [
-        {
-          attributes: [],
-          model: Parcela,
-          required: false,
-          where: {
-            dataParcela: today(),
-          },
-        },
+      group: ["id"],
+    });
+    var user = users.dataValues;
+
+    var toReceive = await HistoMotoboy.findAll({
+      attributes: [[sequelize.fn("sum", sequelize.col("valor")), "valor"]],
+      where: {
+        userId: req.params.id,
+        pago: { [Op.not]: true },
+      },
+    });
+
+    var historico = await HistoMotoboy.findAll({
+      attributes: [
+        "userId",
+        [sequelize.literal('DATE("data")'), "date"],
+        [sequelize.fn("sum", sequelize.col("valor")), "valor"],
       ],
-      group: ["user.id"],
+      group: [[sequelize.literal('DATE("data")'), "date"], "userId"],
+      where: {
+        userId: req.params.id,
+        pago: { [Op.not]: true },
+      },
+      order: [[sequelize.literal('DATE("data")'), "DESC"]],
+    });
+
+    user.toReceive = toReceive[0].valor;
+
+    var historicos = historico.map((val) => val.dataValues);
+    user.historico = historicos;
+
+    res.send(user);
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
+  }
+});
+
+/** Fetch user hist by id **/
+router.get("/users/hist/:id", async (req, res) => {
+  try {
+    var users = await User.findOne({
+      attributes: ["id", "name", "username", "password", "authLevel"],
+      where: {
+        id: req.params.id,
+      },
+      order: [["name", "ASC"]],
+      group: ["id"],
     });
     var user = users.dataValues;
 
@@ -110,8 +136,9 @@ router.get("/users/:id", async (req, res) => {
       group: [[sequelize.literal('DATE("data")'), "date"], "userId"],
       where: {
         userId: req.params.id,
+        pago: true,
       },
-      order: [[sequelize.literal('DATE("data")'), 'DESC']]
+      order: [[sequelize.literal('DATE("data")'), "DESC"]],
     });
 
     var historicos = historico.map((val) => val.dataValues);
@@ -124,7 +151,7 @@ router.get("/users/:id", async (req, res) => {
 });
 
 /** Fetch motoboy by id **/
-router.post("/motoboy/:id", async (req, res) => {
+router.post("/motoboy/:id/receber", async (req, res) => {
   const { dataParcela } = req.body;
   if (!dataParcela) {
     res.status(400).send({ error: "dataParcela é obrigatório" });
@@ -149,7 +176,10 @@ router.post("/motoboy/:id", async (req, res) => {
             model: HistoMotoboy,
             required: false,
             where: {
-              [Op.and]: sequelize.literal("DATE(\"data\") = '" + dataParcela + "'"),
+              pago: { [Op.not]: true },
+              [Op.and]: sequelize.literal(
+                'DATE("data") = \'' + dataParcela + "'"
+              ),
             },
           },
         ],
@@ -158,21 +188,26 @@ router.post("/motoboy/:id", async (req, res) => {
       var user = users.dataValues;
 
       var historico = await HistoMotoboy.findAll({
-        attributes: ['data', 'valor', 'parcelanum', 'emprestimo.cliente.name'],
-        order: [['data', 'DESC']],
+        attributes: ["data", "valor", "parcelanum", "emprestimo.cliente.name"],
+        order: [["data", "DESC"]],
         where: {
           userId: req.params.id,
-          [Op.and]: sequelize.literal("DATE(\"data\") = '" + dataParcela + "'"),
+          pago: { [Op.not]: true },
+          [Op.and]: sequelize.literal('DATE("data") = \'' + dataParcela + "'"),
         },
-        include: [{
-          attributes: ['id'],
-          model: Emprestimo,
-          include: [{
-            attributes: ['name'],
-            model: Cliente
-          }]
-        }]
-      })
+        include: [
+          {
+            attributes: ["id"],
+            model: Emprestimo,
+            include: [
+              {
+                attributes: ["name"],
+                model: Cliente,
+              },
+            ],
+          },
+        ],
+      });
 
       var historicos = historico.map((val) => val.dataValues);
 
@@ -183,6 +218,126 @@ router.post("/motoboy/:id", async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: error.toString() });
     }
+  }
+});
+
+
+/** Fetch motoboy hist by id **/
+router.post("/motoboy/:id/historico", async (req, res) => {
+  const { dataParcela } = req.body;
+  if (!dataParcela) {
+    res.status(400).send({ error: "dataParcela é obrigatório" });
+  } else {
+    try {
+      var users = await User.findOne({
+        attributes: [
+          "id",
+          "name",
+          [
+            sequelize.fn("sum", sequelize.col("histomotoboys.valor")),
+            "receivedToday",
+          ],
+        ],
+        where: {
+          id: req.params.id,
+        },
+        order: [["name", "ASC"]],
+        include: [
+          {
+            attributes: [],
+            model: HistoMotoboy,
+            required: false,
+            where: {
+              pago: true,
+              [Op.and]: sequelize.literal(
+                'DATE("data") = \'' + dataParcela + "'"
+              ),
+            },
+          },
+        ],
+        group: ["user.id"],
+      });
+      var user = users.dataValues;
+
+      var historico = await HistoMotoboy.findAll({
+        attributes: ["data", "valor", "parcelanum", "emprestimo.cliente.name"],
+        order: [["data", "DESC"]],
+        where: {
+          userId: req.params.id,
+          pago:true,
+          [Op.and]: sequelize.literal('DATE("data") = \'' + dataParcela + "'"),
+        },
+        include: [
+          {
+            attributes: ["id"],
+            model: Emprestimo,
+            include: [
+              {
+                attributes: ["name"],
+                model: Cliente,
+              },
+            ],
+          },
+        ],
+      });
+
+      var historicos = historico.map((val) => val.dataValues);
+
+      user.historico = historicos;
+      user.dataParcela = dataParcela;
+
+      res.send(user);
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+  }
+});
+
+/** receive from motoboy by id and date **/
+router.post("/motoboy/:id/receber", async (req, res) => {
+  const { dataParcela } = req.body;
+  if (!dataParcela) {
+    res.status(400).send({ error: "dataParcela é obrigatório" });
+  } else {
+    try {
+      await HistoMotoboy.update(
+        {
+          pago: true,
+        },
+        {
+          where: {
+            userId: req.params.id,
+            [Op.and]: sequelize.literal(
+              'DATE("data") = \'' + dataParcela + "'"
+            ),
+          },
+        }
+      );
+
+      res.send();
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+  }
+});
+
+/** receive all from motoboy by id **/
+router.post("/motoboy/:id/receberTudo", async (req, res) => {
+  try {
+    await HistoMotoboy.update(
+      {
+        pago: true,
+      },
+      {
+        where: {
+          userId: req.params.id,
+        },
+      }
+    );
+
+    res.send();
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
   }
 });
 

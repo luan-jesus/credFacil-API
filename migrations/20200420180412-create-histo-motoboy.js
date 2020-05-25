@@ -29,6 +29,9 @@ module.exports = {
       parcelanum: {
         type: Sequelize.INTEGER
       },
+      pago: {
+        type: Sequelize.BOOLEAN
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

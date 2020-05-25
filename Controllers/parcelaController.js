@@ -1,6 +1,6 @@
 /** External Modules **/
 var express = require("express");
-var { Op } = require('sequelize');
+var { Op } = require("sequelize");
 
 /** Internal Modules **/
 const Parcela = require("../Models").parcela;
@@ -20,57 +20,6 @@ function today() {
 /*
  * GET
  */
-
-/** Todas as parcelas de hoje ainda não pagas **/
-router.get("/parcelas/today", async (req, res) => {
-  var today = new Date();
-
-  try {
-    await Parcela.findAll({
-      attributes: ["id", "parcelaNum", "valorParcela", "dataParcela"],
-      where: {
-        [Op.or]: [
-          {
-            dataParcela: new Date(
-              today.getFullYear(),
-              today.getMonth(),
-              today.getDate()
-            ),
-            status: -1
-          },
-          {
-            dataParcela: {
-              [Op.lte]: new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate()
-              )
-            },
-            semanal: true,
-            status: -1
-          }
-        ]
-        
-      },
-      include: [
-        {
-          attributes: ["id"],
-          model: Emprestimo,
-          include: [
-            {
-              attributes: ["name"],
-              model: Cliente,
-            },
-          ],
-        },
-      ],
-    }).then((ev) => {
-      res.send(ev);
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.toString() });
-  }
-});
 
 /** Determinada parcela **/
 router.get("/parcelas/:parcelaId", async (req, res) => {
@@ -114,303 +63,157 @@ router.get("/parcelas/:parcelaId", async (req, res) => {
 /** POST - Receber parcela */
 router.post("/parcelas/:parcelaId/receber", async (req, res) => {
   const { parcelaId } = req.params;
-  const { valorParcela, valorPago, cobrado, emprestimoId, userId } = req.body;
+  const { valorParcela, valorPago, cobrado, userId } = req.body;
 
-  var parcelaAReceber = await Parcela.findOne({
-    where: {
-      id: parcelaId
+  try {
+    var parcelaAReceber = await Parcela.findOne({
+      where: {
+        id: parcelaId,
+      },
+    });
+
+    if (!parcelaAReceber)
+      return res.status(400).send({ error: "Parcela não encontrada" });
+
+    var statusParcela = cobrado ? 1 : -1;
+    var residuo = parseFloat(parcelaAReceber.valorParcela) - valorPago;
+
+    if (residuo != 0 && cobrado) {
+      var i = 1;
+      do {
+        var proxParcela = await Parcela.findOne({
+          where: {
+            emprestimoId: parcelaAReceber.emprestimoId,
+            parcelaNum: parcelaAReceber.parcelaNum + i,
+          },
+        });
+        i++;
+
+        if (proxParcela && proxParcela.status === -1) break;
+      } while (proxParcela);
+
+      if (proxParcela) {
+        if (parseFloat(proxParcela.valorParcela) + residuo <= 0)
+          return res
+            .status(400)
+            .json({
+              error:
+                "O valor pago excedeu o valor da próxima parcela, para que a parcela não seja anulada, adicione o valor de cada parcela manualmente.",
+            });
+
+        await Parcela.update(
+          {
+            valorParcela: parseFloat(proxParcela.valorParcela) + residuo,
+          },
+          {
+            where: {
+              id: proxParcela.id,
+            },
+          }
+        );
+      } else {
+        statusParcela = -1;
+      }
     }
-  })
 
-  if (!parcelaAReceber) {
-    res.status(400).send({ error: "Parcela não encontrada" });
-  } else {
+    if (residuo <= 0) statusParcela = 1;
+
     await Parcela.update(
       {
-        valorParcela: valorParcela,
+        valorParcela: valorParcela || parcelaAReceber.valorParcela,
         valorPago: valorPago,
         cobrado: cobrado,
         userId: userId,
-        status: -1
+        status: statusParcela,
       },
       {
         where: {
-          id: parcelaAReceber.id
-        }
+          id: parcelaAReceber.id,
+        },
       }
     );
-    await RecalcParcelas(emprestimoId);
-    await sleep(1000);
-    await RecalcEmprestimo(emprestimoId);
 
     await HistoMotoboy.create({
       userId: userId,
       data: today(),
       valor: valorPago,
       parcelanum: parcelaAReceber.parcelaNum,
-      emprestimoId: emprestimoId
+      emprestimoId: parcelaAReceber.emprestimoId,
+      pago: false
     });
 
-    res.status(200).send()
-  }
-});
-
-/** Delete Parcela */
-router.delete("/parcelas/:parcelaId" , async (req, res) => {
-  const { parcelaId } = req.params;
-
-  var parcelaADeletar = await Parcela.findOne({
-    where: {
-      id: parcelaId
-    }
-  });
-
-  if (!parcelaADeletar) {
-    res.status(404).send({error: "Parcela não encontrada"});
-  } else {
-    try{
-      await parcelaADeletar.destroy();
-      await RecalcParcelas(parcelaADeletar.emprestimoId);
-      await sleep(1000);
-      await RecalcEmprestimo(parcelaADeletar.emprestimoId);
-      res.status(200).send()
-    } catch (error) {
-      res.status(500).json({ error: error.toString() });
-    }
-    
-  }
-});
-
-async function RecalcParcelas(idEmprestimo) {
-  var parcelas;
-
-  try {
-    await Parcela.findAll({
-      where: {
-        emprestimoId: idEmprestimo,
-      },
-      order: ['parcelaNum']
-    }).then((ev) => {
-      parcelas = ev.map(value => value.dataValues)
-    });
-
-  } catch (erro) {
-    res.status(500).json({ error: error.toString() });
-  }
-  
-  for (var i = 0; i < parcelas.length; i++) {
-    var parcela = parcelas[i];
-    parcela.valorPago = parseFloat(parcela.valorPago);
-    parcela.valorParcela = parseFloat(parcela.valorParcela);
-    if (parcela.status == -1) {
-      if (getDate(parcela.dataParcela) <= getDate(new Date())) {
-        // Data da parcela é anterior ao dia de hoje
-        if (parcela.cobrado) {
-          if (parcela.valorPago === 0) {
-            // Parcela foi cobrada mas nao foi pago
-            // Define status 0 (não pago)
-            parcela.status = 0;
-            parcela.valorParcela = 0;
-          } else {
-            // Parcela foi cobrada a paga
-            var residuo = parcela.valorParcela - parcela.valorPago;
-            if (residuo === 0) {
-              // Parcela foi paga normalmente
-              // Define status 1 (pago)
-              parcela.status = 1;
-            } else if (residuo > 0) {
-              // Parcela foi paga e teve resíduo positivo
-              // Pagou a menos do que o cobrado
-              // Define status como 2 (pago com ressalvas) e adiciona o resíduo na proxima parcela
-              parcela.status = 2;
-              parcela.valorParcela = parcela.valorPago;
-              parcelas[i + 1].status = -1;
-              var oldValue = parseFloat(parcelas[i + 1].valorParcela)
-              parcelas[i + 1].valorParcela = oldValue + residuo;
-            } else {
-              // Parcela foi paga e teve resíduo negativo
-              // Pagou a mais do que o cobrado
-              // Define status como 1 (pago) e adiciona o resíduo na proxima parcela
-              parcela.status = 1;
-              parcela.valorParcela = parcela.valorPago;
-              if (parseFloat(parcelas[i + 1].valorParcela) + residuo <= 0) {
-                // pagou a mais do que o valor da proxima parcela
-                var ultimoIndice = parcelas.length - 1;
-                var restoDoResiduo = residuo;
-                do {
-                  if (parseFloat(parcelas[ultimoIndice].valorParcela) + restoDoResiduo <= 0) {
-                    restoDoResiduo = restoDoResiduo + parseFloat(parcelas[ultimoIndice].valorParcela);
-                    parcelas[ultimoIndice].valorParcela = 0;
-                    parcelas[ultimoIndice].status = -1;
-                  } else {
-                    parcelas[ultimoIndice].status = -1;
-                    var oldValue = parseFloat(parcelas[ultimoIndice].valorParcela)
-                    parcelas[ultimoIndice].valorParcela = oldValue + restoDoResiduo;
-                    restoDoResiduo = restoDoResiduo + oldValue;
-                  }
-                  ultimoIndice--;
-                } while (restoDoResiduo <= 0);
-              } else {
-                parcelas[i + 1].status = -1;
-                var oldValue = parseFloat(parcelas[i + 1].valorParcela)
-                parcelas[i + 1].valorParcela = oldValue + residuo;
-              }
-            }
-          }
-        } else {
-          if (getDate(parcela.dataParcela) != getDate(new Date())) {
-             // Passou do dia e a parcela nao foi cobrada,
-            // define status 4 (não cobrado) e zera o valor da parcela
-            parcela.status = 4;
-            parcela.valorParcela = 0;
-          }
-        }
-      }
-    }
-
-    parcelas[i] = parcela;
-  }
-
-  try {
-    parcelas.map(async parcela => {
-      await Parcela.update(
-        {
-          valorParcela: parcela.valorParcela,
-          valorPago: parcela.valorPago,
-          cobrado: parcela.cobrado,
-          status: parcela.status
-        },
-        {
-          where: {
-            id: parcela.id
-          }
-        }
-      );
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.toString() });
-  }
-}
-
-async function RecalcEmprestimo(idEmprestimo) {
-  try{
-    await Parcela.destroy({
-      where: {
-        emprestimoId: idEmprestimo,
-        status: -1,
-        valorParcela: 0
-      }
-    });
-
-    var emprestimo = await Emprestimo.findOne({
+    const valorPagoEmprestimo = await Parcela.findAll({
       attributes: [
-        "id",
-        "valorAReceber"
+        [sequelize.fn("sum", sequelize.col("valorPago")), "totalPago"],
       ],
       where: {
-        id: idEmprestimo
-      }
+        emprestimoId: parcelaAReceber.emprestimoId,
+      },
     });
 
-    var somaParcelas = await Parcela.findAll({
-      attributes: [
-        [sequelize.fn('sum', sequelize.col('valorParcela')), 'SomaValorParcelas'],
-        [sequelize.fn('sum', sequelize.col('valorPago')), 'SomaValorPago']
-      ],
+    const numParcelasPagas = await Parcela.count({
       where: {
-        emprestimoId: idEmprestimo
-      }
-    })
-
-    var totalParcelasPagas = await Parcela.count({
-      where: {
-        emprestimoId: idEmprestimo,
-        status:{ [Op.in]: [1, 2, 3]}
-      }
-    })
-
-    var ultimaParcela = await Parcela.findAll({
-      limit: 1,
-      where: {
-        emprestimoId: idEmprestimo
+        emprestimoId: parcelaAReceber.emprestimoId,
+        status: 1,
       },
-      order: [ [ 'parcelaNum', 'DESC' ]]
-    })
+    });
 
-    var novaData = new Date(ultimaParcela[0].dataParcela.getTime())
-    do {
-      var novaData = new Date(novaData.getTime() + 86400000)
-    } while(novaData.getDay() == 0)
-
-    if (parseFloat(somaParcelas[0].dataValues.SomaValorParcelas) < parseFloat(emprestimo.valorAReceber)) {
-      console.log("Entrou aqui");
-      await Parcela.create(
-        {
-          emprestimoId: idEmprestimo,
-          parcelaNum: ultimaParcela[0].parcelaNum + 1,
-          status: -1,
-          valorParcela: emprestimo.valorAReceber - somaParcelas[0].dataValues.SomaValorParcelas,
-          cobrado: 0,
-          valorPago: 0,
-          dataParcela: novaData
-        }
-      )
-    }
-
-    var numParcelas = await Parcela.count({
+    const emprestimoParcela = await Emprestimo.findOne({
       where: {
-        emprestimoId: idEmprestimo
-      }
-    })
-    
-    var status = -1;
-    if (parseFloat(somaParcelas[0].dataValues.SomaValorPago) >= parseFloat(emprestimo.valorAReceber)) {
-      var totalParcelasNaoPagas = await Parcela.count({
-        where: {
-          emprestimoId: idEmprestimo,
-          status: 0
-        }
-      });
+        id: parcelaAReceber.emprestimoId,
+      },
+    });
 
-      status = 1;
-
-      if (totalParcelasNaoPagas > 4) {
-        status = 3
-      }
-      else if (totalParcelasNaoPagas > 0) {
-        status = 2;
-      }
+    var emprestimoStatus = -1;
+    if (
+      parseFloat(valorPagoEmprestimo[0].dataValues.totalPago) >=
+      parseFloat(emprestimoParcela.valorAReceber)
+    ) {
+      emprestimoStatus = 1;
     }
 
     await Emprestimo.update(
       {
-        valorPago: parseFloat(somaParcelas[0].dataValues.SomaValorPago),
-        numParcelas: numParcelas,
-        numParcelasPagas: totalParcelasPagas,
-        status: status
+        status: emprestimoStatus,
+        valorPago: parseFloat(valorPagoEmprestimo[0].dataValues.totalPago),
+        numParcelasPagas: numParcelasPagas,
       },
       {
         where: {
-          id: emprestimo.id
-        }
+          id: emprestimoParcela.id,
+        },
       }
-    )
+    );
 
-    
+    return res.status(200).send();
   } catch (error) {
-    res.status(500).json({ error: error.toString() });
+    return res.status(500).json({ error: error.toString() });
   }
-}
+});
 
-function getDate(date) {
-  const x = new Date(date);
-  return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-}
+/** Delete Parcela */
+router.delete("/parcelas/:parcelaId", async (req, res) => {
+  const { parcelaId } = req.params;
 
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+  var parcelaADeletar = await Parcela.findOne({
+    where: {
+      id: parcelaId,
+    },
   });
-}
+
+  if (!parcelaADeletar) {
+    res.status(404).send({ error: "Parcela não encontrada" });
+  } else {
+    try {
+      await parcelaADeletar.destroy();
+      await RecalcParcelas(parcelaADeletar.emprestimoId);
+      await sleep(1000);
+      await RecalcEmprestimo(parcelaADeletar.emprestimoId);
+      res.status(200).send();
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+  }
+});
 
 module.exports = router;
