@@ -223,7 +223,7 @@ router.post("/motoboy/:id/receber", async (req, res) => {
 
 
 /** Fetch motoboy hist by id **/
-router.post("/motoboy/:id/historico", async (req, res) => {
+router.post("/motoboy/:id", async (req, res) => {
   const { dataParcela } = req.body;
   if (!dataParcela) {
     res.status(400).send({ error: "dataParcela é obrigatório" });
