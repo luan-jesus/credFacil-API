@@ -264,7 +264,6 @@ router.post("/motoboy/:id", async (req, res) => {
         order: [["data", "DESC"]],
         where: {
           userId: req.params.id,
-          pago:true,
           [Op.and]: sequelize.literal('DATE("data") = \'' + dataParcela + "'"),
         },
         include: [
