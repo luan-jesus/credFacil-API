@@ -248,7 +248,6 @@ router.post("/motoboy/:id", async (req, res) => {
             model: HistoMotoboy,
             required: false,
             where: {
-              pago: true,
               [Op.and]: sequelize.literal(
                 'DATE("data") = \'' + dataParcela + "'"
               ),
