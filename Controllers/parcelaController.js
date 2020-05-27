@@ -133,14 +133,25 @@ router.post("/parcelas/:parcelaId/receber", async (req, res) => {
       }
     );
 
-    await HistoMotoboy.create({
-      userId: userId,
-      data: today(),
-      valor: valorPago,
-      parcelanum: parcelaAReceber.parcelaNum,
-      emprestimoId: parcelaAReceber.emprestimoId,
-      pago: false
-    });
+    if (cobrado === true) {
+      await HistoMotoboy.create({
+        userId: userId,
+        data: today(),
+        valor: valorPago,
+        parcelanum: parcelaAReceber.parcelaNum,
+        emprestimoId: parcelaAReceber.emprestimoId,
+        pago: false
+      });
+    } else if (cobrado === false) {
+      // Se atualizar a parcela, e setar cobrado como falso, limpa todo histórico da parcela
+
+      await HistoMotoboy.destroy({
+        where: {
+          parcelanum: parcelaAReceber.parcelaNum,
+          emprestimoId: parcelaAReceber.emprestimoId,
+        }
+      });
+    }
 
     const valorPagoEmprestimo = await Parcela.findAll({
       attributes: [

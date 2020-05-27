@@ -221,6 +221,77 @@ router.post("/motoboy/:id/receber", async (req, res) => {
   }
 });
 
+/** Fetch motoboy history by id **/
+router.post("/motoboy/:id/historicodoMotoboy", async (req, res) => {
+  const { dataParcela } = req.body;
+  if (!dataParcela) {
+    res.status(400).send({ error: "dataParcela é obrigatório" });
+  } else {
+    try {
+      var users = await User.findOne({
+        attributes: [
+          "id",
+          "name",
+          [
+            sequelize.fn("sum", sequelize.col("histomotoboys.valor")),
+            "receivedToday",
+          ],
+        ],
+        where: {
+          id: req.params.id,
+        },
+        order: [["name", "ASC"]],
+        include: [
+          {
+            attributes: [],
+            model: HistoMotoboy,
+            required: false,
+            where: {
+              pago: true,
+              [Op.and]: sequelize.literal(
+                'DATE("data") = \'' + dataParcela + "'"
+              ),
+            },
+          },
+        ],
+        group: ["user.id"],
+      });
+      var user = users.dataValues;
+
+      var historico = await HistoMotoboy.findAll({
+        attributes: ["data", "valor", "parcelanum", "emprestimo.cliente.name"],
+        order: [["data", "DESC"]],
+        where: {
+          userId: req.params.id,
+          pago: true ,
+          [Op.and]: sequelize.literal('DATE("data") = \'' + dataParcela + "'"),
+        },
+        include: [
+          {
+            attributes: ["id"],
+            model: Emprestimo,
+            include: [
+              {
+                attributes: ["name"],
+                model: Cliente,
+              },
+            ],
+          },
+        ],
+      });
+
+      var historicos = historico.map((val) => val.dataValues);
+
+      user.historico = historicos;
+      user.dataParcela = dataParcela;
+
+      res.send(user);
+    } catch (error) {
+      res.status(500).json({ error: error.toString() });
+    }
+  }
+});
+
 
 /** Fetch motoboy hist by id **/
 router.post("/motoboy/:id", async (req, res) => {
@@ -292,7 +363,7 @@ router.post("/motoboy/:id", async (req, res) => {
 });
 
 /** receive from motoboy by id and date **/
-router.post("/motoboy/:id/receber", async (req, res) => {
+router.post("/motoboy/:id/receberDoMotoboy", async (req, res) => {
   const { dataParcela } = req.body;
   if (!dataParcela) {
     res.status(400).send({ error: "dataParcela é obrigatório" });
