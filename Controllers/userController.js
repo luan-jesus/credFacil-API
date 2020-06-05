@@ -209,7 +209,14 @@ router.post("/motoboy/:id/receber", async (req, res) => {
         ],
       });
 
-      var historicos = historico.map((val) => val.dataValues);
+      var historicos = historico.map((val) => {
+        if (!val.dataValues.emprestimo) {
+          var dataToReturn = val.dataValues;
+          dataToReturn.emprestimo = { id: 0, cliente: { name: "Emprestimo deletado"}}
+          return dataToReturn;
+        }
+        return val.dataValues
+      });
 
       user.historico = historicos;
       user.dataParcela = dataParcela;
