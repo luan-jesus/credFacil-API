@@ -217,9 +217,6 @@ router.delete("/parcelas/:parcelaId", async (req, res) => {
   } else {
     try {
       await parcelaADeletar.destroy();
-      await RecalcParcelas(parcelaADeletar.emprestimoId);
-      await sleep(1000);
-      await RecalcEmprestimo(parcelaADeletar.emprestimoId);
       res.status(200).send();
     } catch (error) {
       res.status(500).json({ error: error.toString() });

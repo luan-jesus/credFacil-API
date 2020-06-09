@@ -60,23 +60,27 @@ router.get("/clientes/:id", async (req, res) => {
  * **/
 router.post("/clientes", async (req, res) => {
   var body = req.body;
-  if (!body.name) {
-    res.status(400).send("name is required");
-  } else {
-    try {
-      await sequelize.transaction(async (t) => {
-        await Cliente.create(
-          {
-            name: body.name,
-            username: body.username.toLowerCase(),
-            password: body.password.toLowerCase()
-          },
-          { transaction: t }
-        ).then(() => res.status(201).send());
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.toString() });
-    }
+  if (!body.name) return res.status(400).send("Nome é obrigatório");
+  
+  var username = body.username;
+  if (!username) username = '';
+
+  var password = body.username;
+  if (!password) password = '';
+
+  try {
+    await sequelize.transaction(async (t) => {
+      await Cliente.create(
+        {
+          name: body.name,
+          username: username.toLowerCase(),
+          password: password.toLowerCase()
+        },
+        { transaction: t }
+      ).then(() => res.status(201).send());
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
   }
 });
 
