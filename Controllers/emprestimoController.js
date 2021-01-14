@@ -24,6 +24,9 @@ function today() {
 /** Todas todos os emprestimos a receber **/
 router.get("/emprestimos/receber/:userId", async (req, res) => {
   const { userId } = req.params;
+  const { orderBy, sort } = req.query;
+
+  console.log([orderBy, sort]);
   var today = new Date();
 
   try {
@@ -62,7 +65,12 @@ router.get("/emprestimos/receber/:userId", async (req, res) => {
           },
         },
       ],
-      order: [[sequelize.literal('"valorReceber"'), 'ASC']]
+      order: [
+        [
+          sequelize.literal(orderBy ? `"${orderBy}"` : '"valorReceber"'),
+          sort || "ASC",
+        ],
+      ],
     });
 
     const receivedToday = await HistoMotoboy.findAll({
@@ -407,7 +415,7 @@ router.post("/emprestimos/:idEmprestimo/pagar", async (req, res) => {
           valor: valorPagoParcela,
           parcelanum: parcela.parcelaNum,
           emprestimoId: parcela.emprestimoId,
-          pago: false
+          pago: false,
         });
 
         if (residuoParcela) {
@@ -441,10 +449,10 @@ router.post("/emprestimos/:idEmprestimo/pagar", async (req, res) => {
 
             await Parcela.update(
               {
-                status: -1
+                status: -1,
               },
               {
-                where: { id: parcela.id }
+                where: { id: parcela.id },
               }
             );
           }
