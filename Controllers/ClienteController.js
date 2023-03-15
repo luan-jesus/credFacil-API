@@ -4,140 +4,140 @@ var express = require("express");
 /** Internal Modules **/
 const Cliente = require("../Models").cliente;
 const Emprestimo = require("../Models").emprestimo;
-const sequelize = require("../Models").sequelize;
 
 var router = express.Router();
 
-/*
- * GET
- */
-
 /** Fetch all Customer **/
 router.get("/clientes", async (req, res) => {
-  await Cliente.findAll({
-    order: [["name", "ASC"]],
-  })
-    .then((ev) => res.json(ev))
-    .catch((error) => res.status(400).send(error));
+  try {
+    const clientes = await Cliente.findAll({
+      order: [["name", "ASC"]],
+    });
+
+    return res.json(clientes);
+  } catch (error) {
+    return res.status(500).send(error);
+  }
 });
+
 /** Fetch customer by id **/
 router.get("/clientes/:id", async (req, res) => {
   try {
-    await Cliente.findOne({
+    const cliente = await Cliente.findOne({
       attributes: ["id", "name", "username", "password"],
       where: {
         id: req.params.id,
       },
-      
-      include: [{
-        attributes: [
-          "id",
-          "status",
-          "valorEmprestimo",
-          "valorAReceber",
-          "valorPago",
-          "numParcelas",
-          "numParcelasPagas",
-          "dataInicio"
-        ],
-        model: Emprestimo,
-        required: false,
-        order: [["id", "DESC"]],
-        separate: true
-      }]
-    }).then(ev => res.send(ev));
+      include: [
+        {
+          attributes: [
+            "id",
+            "status",
+            "valorEmprestimo",
+            "valorAReceber",
+            "valorPago",
+            "numParcelas",
+            "numParcelasPagas",
+            "dataInicio",
+          ],
+          model: Emprestimo,
+          required: false,
+          order: [["id", "DESC"]],
+          separate: true,
+        },
+      ],
+    });
+
+    return res.send(cliente);
   } catch (error) {
-    res.status(500).json({ error: error.toString() });
+    return res.status(500).json({ error: error.toString() });
   }
 });
 
-/*
- * POST
- */
 
-/** Create new Customer
- * @Param name
- * **/
+/* Create new Customer */
 router.post("/clientes", async (req, res) => {
-  var body = req.body;
-  if (!body.name) return res.status(400).send("Nome é obrigatório");
-  
-  var username = body.username;
-  if (!username) username = '';
+  const { name, username, password} = req.body;
 
-  var password = body.username;
-  if (!password) password = '';
+  if (!name) {
+    return res.status(400).send("Nome é obrigatório");
+  }
+
+  if (!username) {
+    return res.status(400).send("Usuário é obrigatório");
+  }
+
+  if (!password) {
+    return res.status(400).send("Senha é obrigatório");
+  }
 
   try {
-    await sequelize.transaction(async (t) => {
-      await Cliente.create(
-        {
-          name: body.name,
-          username: username.toLowerCase(),
-          password: password.toLowerCase()
-        },
-        { transaction: t }
-      ).then(() => res.status(201).send());
-    });
+    const cliente = await Cliente.create(
+      {
+        name: name,
+        username: username.toLowerCase(),
+        password: password.toLowerCase(),
+      }
+    );
+
+    return res.status(201).send(cliente);
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
 });
 
-/** Update Customer
- * @Param id
- * @Param name
- * **/
+/** Update Customer */
 router.put("/clientes", async (req, res) => {
-  var { id, name, username, password } = req.body;
-  if (!username) {
-    username = ""
+  const { id, name, username, password } = req.body;
+
+  if (!id) {
+    return res.status(400).send('Id é obrigatório');
   }
-  if (!password) {
-    password = ""
-  }
-  if (id && name) {
-    try {
-      await sequelize.transaction(async (t) => {
-        await Cliente.update(
-          {
-            name: name,
-            username: username.toLowerCase(),
-            password: password.toLowerCase()
-          },
-          {
-            where: { id: id },
-          },
-          { transaction: t }
-        ).then((rowsAffected) =>
-          res.status(200).send({ rowsAffected: rowsAffected[0] })
-        );
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.toString() });
+
+  try {
+    const customerToUpdate = await Cliente.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!customerToUpdate) {
+      return res.status(404).send('Usuário não encontrado');
     }
-  } else {
-    res.status(400).send("Body is missing required parametens");
+
+    const rowsAffected = await Cliente.update(
+      {
+        name: name || customerToUpdate.name,
+        username: username ? username.toLowerCase() : customerToUpdate.username,
+        password: password ? password.toLowerCase() : customerToUpdate.password,
+      },
+      {
+        where: { id: id },
+      }
+    );
+    return res.status(200).send({ rowsAffected: rowsAffected[0] })
+  } catch (error) {
+    return res.status(500).json({ error: error.toString() });
   }
 });
 
 /** Delete Customer **/
 router.delete("/clientes/:id", async (req, res) => {
   try {
-    await sequelize.transaction(async (t) => {
-      let CustomerToDelete = await Cliente.findOne({
-        where: { id: req.params.id },
-      })
-      if (!CustomerToDelete) {
-        res.status(404).send("Record not found");
-      } else {
-        await CustomerToDelete.destroy({ transaction: t }).then(() => {
-          res.status(200).send();
-        });
-      }
+    const CustomerToDelete = await Cliente.findOne({
+      where: { id: req.params.id },
     });
+
+    if (!CustomerToDelete) {
+      return res.status(404).send("Record not found");
+    }
+
+    await CustomerToDelete.destroy()
+    
+    return res.status(200).send();
   } catch (error) {
-    res.status(500).json({ error: error.toString() });
+    return res.status(500).json({ error: error.toString() });
   }
 });
+
 module.exports = router;

@@ -391,11 +391,16 @@ router.post("/emprestimos/:idEmprestimo/pagar", async (req, res) => {
       if (residuo <= 0) break;
 
       if (parcela.status === -1) {
-        console.log(`Atualizando parcela ${parcela.parcelaNum}, residuo ${residuo} `);
+        console.log(
+          `Atualizando parcela ${parcela.parcelaNum}, residuo ${residuo} `
+        );
 
-        var valorPagar = parseFloat(parcela.valorParcela) - parseFloat(parcela.valorPago);
+        var valorPagar =
+          parseFloat(parcela.valorParcela) - parseFloat(parcela.valorPago);
         var valorPagoParcela = residuo < valorPagar ? residuo : valorPagar;
-        var residuoParcela = parseFloat(parcela.valorParcela) - (valorPagoParcela + parseFloat(parcela.valorPago));
+        var residuoParcela =
+          parseFloat(parcela.valorParcela) -
+          (valorPagoParcela + parseFloat(parcela.valorPago));
 
         await Parcela.update(
           {
@@ -445,7 +450,9 @@ router.post("/emprestimos/:idEmprestimo/pagar", async (req, res) => {
               }
             );
           } else {
-            console.log("Teve residuo e é a ultima parcela, definindo status da ultima como -1");
+            console.log(
+              "Teve residuo e é a ultima parcela, definindo status da ultima como -1"
+            );
 
             await Parcela.update(
               {
