@@ -7,6 +7,11 @@ module.exports = {
     password: process.env.CONECTION_DEV_PASSWORD,
     database: process.env.CONECTION_DEV_DATABASE,
     host: process.env.CONECTION_DEV_HOST,
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
     dialect: "postgres"
   },
   test: {
@@ -14,6 +19,11 @@ module.exports = {
     password: process.env.CONECTION_DEV_PASSWORD,
     database: process.env.CONECTION_DEV_DATABASE,
     host: process.env.CONECTION_DEV_HOST,
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
     dialect: "postgres"
   },
   production: {
@@ -21,6 +31,11 @@ module.exports = {
     password: process.env.CONECTION_PRD_PASSWORD,
     database: process.env.CONECTION_PRD_DATABASE,
     host: process.env.CONECTION_PRD_HOST,
-    dialect: "postgres"
+    dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
   }
 };
